@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
-# $File: //depot/metalist/plugins/OurNet/test.pl $ $Author: autrijus $
-# $Revision: #1 $ $Change: 1965 $ $DateTime: 2001/10/05 23:27:48 $
+# $File: //depot/metalist/plugins/OurNet/t/use.t $ $Author: autrijus $
+# $Revision: #1 $ $Change: 2427 $ $DateTime: 2001/11/26 08:16:42 $
 
 use strict;
 use Test;

@@ -1,7 +1,6 @@
 # $File: //member/autrijus/slash-ournet/ournet.pl $ $Author: autrijus $
 # $Revision: #13 $ $Change: 1360 $ $DateTime: 2001/07/01 06:41:24 $
 
-use lib qw{/home/staff/autrijus/depot/OurNet-BBS/blib/lib .};
 use strict;
 use warnings;
 use Slash::OurNet;
@@ -25,8 +24,7 @@ our ($TopClass, $TopArticles, $NewId, $MailBox, $Customize, $BugReport,
      $MainMenu, $Organization, @Connection, $RootDisplay, $DefaultUser,
      $DefaultNick, $Login);
 
-(my $pathname = $0) =~ s/[^\/]+$//;
-$pathname ||= '.';
+(my $pathname = $0) =~ s/[^\/]+$//; $pathname ||= '.';
 do "$pathname/ournet.conf";
 
 our $bbs;
@@ -95,7 +93,7 @@ sub main {
 sub displayLogin {
     if ($ENV{SLASH_USER}) {
 	# shouldn't be here unless Anonymous Coward is turned off.
-	print "妳尚未登入. 請按左方的登入選項.";
+	print "You haven't logged in. Please press login in the left side bar.";
     }
     else {
 	slashDisplay('login', {});
@@ -104,8 +102,8 @@ sub displayLogin {
 
 sub displayDefault {
     displayGroup(@_, '', $TopClass);
-    print "<hr>";
-    displayTop(@_);
+    # print "<hr>";
+    # displayTop(@_);
 }
 
 sub displayTop {
@@ -143,8 +141,8 @@ sub displayGroup {
 sub displayBoard {
     my ($form, $bbs, $constants, $user) = @_;
     unless ($bbs->{bbs}{boards}{$form->{board}}) {
-	print '無此看板.<hr>';
-	print '<div align="center">[ <a href="ournet.pl">回主畫面</a> ]</div>';
+	print 'No such board.<hr>';
+	print '<div align="center">[ <a href="ournet.pl">Back to main menu</a> ]</div>';
 	return;
     }
 

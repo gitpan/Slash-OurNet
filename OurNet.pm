@@ -3,7 +3,7 @@
 
 package Slash::OurNet;
 
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 our @ISA = qw/Slash::DB::Utility Slash::DB::MySQL/ if $ENV{SLASH_USER};
 
 use strict;
@@ -12,19 +12,16 @@ use warnings;
 use Text::Wrap;
 use Date::Parse;
 use Date::Format;
-# use HTML::FromText;
 use OurNet::BBS;
 
-$OurNet::BBS::Client::NoCache =
-$OurNet::BBS::Client::NoCache = 1; # avoids bloat
+no warnings qw/once redefine/;
 
-no warnings 'redefine';
+$Text::Wrap::columns = 75;
+$OurNet::BBS::Client::NoCache = 1; # avoids bloat
 
 our ($TopClass, $MailBox, $Organization, @Connection, $SecretSigils, 
      $BoardPrefixLength, $GroupPrefixLength, $Strip_ANSI,
      $Thread_Prev, $Date_Prev, $Thread_Next, $Date_Next);
-
-$Text::Wrap::columns = 75;
 
 our %CachedTop;
 
@@ -67,7 +64,7 @@ sub article_save {
 
     my $error; # error message
 
-    $error .= '請輸入標題.<hr>' unless (length($article->{header}));
+    $error .= 'Please enter a subject.<hr>' unless (length($article->{header}));
     $error = '&nbsp;' unless $state;
 
     $artgrp->{articles}{$name || ''} = $article unless $error;
@@ -318,7 +315,7 @@ sub mapArticles {
 	}
 	else { # deleted article
 	    $type   = 'deleted';
-	    $title  = '<< 本文章經作者刪除 >>';
+	    $title  = '<< This article has been deleted >>';
 	    $board  = $board;
 	    $author = '&nbsp;';
 	    $date   = '&nbsp;';
@@ -435,7 +432,7 @@ sub txt2html {
 	$body =~ s/\n: : : .*//g;
 	$body =~ s/\n: : ※ .*//g;
 	$body =~ s/: \n+/\n/g;
-	$body = "※ 引述《$article->{header}{From}》之銘言：\n: $body";
+	$body = "*) $article->{header}{From} wrote:\n: $body";
     }
     else {
         # XXX handle ANSI codes
@@ -453,8 +450,7 @@ sub txt2html {
     return $body;
 }
 
-#!/usr/bin/perl -w
-
+##########################################################################
 # perl script to convert ANSI screens to HTML pages
 # copyright 2001, Stephen Hurd (shurd@sk.sympatico.ca)
 # patched by Autrijus Tang (autrijus@autrijus.org)

@@ -1,12 +1,13 @@
 __section__
 default
 __description__
-Print out all the articles
+The navigation bar
 
-* title = passed to titlebar
-* width = passed to titlebar
-* articles = all articles
-* display = 'edit' for edit mode rendering
+* mailbox = whether if this is a mailbox display
+* newid = the link to acquire a new id
+* login = the login url
+* mailbox = the mailbox url
+* topclass = the 'Top' class. ignore it.
 
 __title__
 
@@ -48,12 +49,12 @@ __template__
 ]
 </td><td width="50%" align="right">
 <FORM action='ournet.pl' method='get'>
-¸õ¨ì
+Select board
 <INPUT type='hidden' name='op' value='board'>
 <INPUT type='hidden' name='group' value='[% topclass %]'>
 <INPUT type='hidden' name='child' value='articles'>
 <INPUT type='text'   name='board' size=15 maxlength=20>
-<INPUT type='submit' value='¬ÝªO'>
+<INPUT type='submit' value='Go'>
 </FORM>
 </td></tr></table><hr>
 __seclev__

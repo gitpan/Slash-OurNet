@@ -1,15 +1,62 @@
 ____________________________________________________________________________
-[  1963] By: autrijus@autricvic                    on 2001/10/05 23:25:11
+[  2427] By: autrijus@autribsd                     on 2001/11/26 08:16:42
+	Log: * Slash::OurNet 1.1, pudge edition.
+	     * all traditional chinese things left out for 1.2.
+       Path: templates
+	   ! article;ournet;default board;ournet;default
+	   ! data;ournet;default group;ournet;default main;ournet;default
+	   ! navigation;ournet;default
+       Path: t
+	   use.t
+       Path: .
+	   ! MANIFEST Makefile.PL OurNet.pm PLUGIN README archive.gif
+	   ! ournet.conf ournet.pl
+	   - test.pl
+____________________________________________________________________________
+[  2346] By: autrijus@autribsd                     on 2001/11/11 05:51:17
+	Log: * fix seq.
+       Path: .
+	   ! PLUGIN
+____________________________________________________________________________
+[  2316] By: autrijus@autribsd                     on 2001/11/08 02:26:12
+	Log: * some finishing touches.
+       Path: .
+	   ! PLUGIN
+____________________________________________________________________________
+[  2280] By: autrijus@autricvic                    on 2001/11/05 15:57:28
+	Log: * fully borderless. right-on!
+       Path: templates
+	   ! article;ournet;default board;ournet;default
+	   ! group;ournet;default
+____________________________________________________________________________
+[  2279] By: autrijus@autricvic                    on 2001/11/05 15:44:58
+	Log: * jjjenq's feature req: interlaced colors.
+       Path: templates
+	   ! board;ournet;default
+____________________________________________________________________________
+[  1965] By: autrijus@autricvic                    on 2001/10/05 08:27:48
+	Log: * come to think about it, no CPAN modules should be without a
+	     test case.
+       Path: .
+	   ! MANIFEST
+	   + test.pl
+____________________________________________________________________________
+[  1964] By: autrijus@autricvic                    on 2001/10/05 08:25:55
+	Log: * Changes. here we go.
+       Path: .
+	   ! Changes
+____________________________________________________________________________
+[  1963] By: autrijus@autricvic                    on 2001/10/05 08:25:11
 	Log: * updates MANIFEST. this be 1.0 then.
        Path: .
 	   + MANIFEST
 ____________________________________________________________________________
-[  1962] By: autrijus@autricvic                    on 2001/10/05 23:24:56
+[  1962] By: autrijus@autricvic                    on 2001/10/05 08:24:56
 	Log: * getting ready for Slash::OurNet v1.0 distro.
        Path: .
 	   + Makefile.PL README
 ____________________________________________________________________________
-[  1902] By: autrijus@autricvic                    on 2001/09/26 21:34:46
+[  1902] By: autrijus@autricvic                    on 2001/09/26 06:34:46
 	Log: * corrected the ANSI rendering versus background color in
 	     templates.
 	     * added a $Strip_ANSI option to enable stripping of ANSI codes
@@ -20,17 +67,17 @@ ____________________________________________________________________________
        Path: .
 	   ! OurNet.pm ournet.conf
 ____________________________________________________________________________
-[  1901] By: autrijus@autricvic                    on 2001/09/25 22:24:00
+[  1901] By: autrijus@autricvic                    on 2001/09/25 07:24:00
 	Log: * linebreak
        Path: .
 	   ! OurNet.pm
 ____________________________________________________________________________
-[  1900] By: autrijus@whitegnote                   on 2001/09/25 22:02:15
+[  1900] By: autrijus@whitegnote                   on 2001/09/25 07:02:15
 	Log: * hack: first trial at getting ansi2html work (from honeypie)
        Path: .
 	   ! OurNet.pm
 ____________________________________________________________________________
-[  1888] By: autrijus@autribsd                     on 2001/09/23 22:16:49
+[  1888] By: autrijus@autribsd                     on 2001/09/23 07:16:49
 	Log: * introduced $OurNet::BBS::Client::NoCache to reduce memory
 	     usage
 	     * Server now accepts re-authentication by repeated handshake()
@@ -39,87 +86,87 @@ ____________________________________________________________________________
        Path: .
 	   ! OurNet.pm
 ____________________________________________________________________________
-[  1808] By: autrijus@autricvic                    on 2001/09/15 00:07:08
+[  1808] By: autrijus@autricvic                    on 2001/09/14 09:07:08
 	Log: * more obiwans.
        Path: templates
 	   ! board;ournet;default
        Path: .
 	   ! OurNet.pm
 ____________________________________________________________________________
-[  1806] By: autrijus@autricvic                    on 2001/09/14 19:34:54
+[  1806] By: autrijus@autricvic                    on 2001/09/14 04:34:54
 	Log: * workaround mod_perl bug: cached connection.
        Path: .
 	   ! ournet.pl
 ____________________________________________________________________________
-[  1726] By: autrijus@autricvic                    on 2001/09/06 02:22:49
+[  1726] By: autrijus@autricvic                    on 2001/09/05 11:22:49
 	Log: * groups worked against CVIC and MELIX both
 	     * revised conf to reflect separated Prefixes
        Path: .
 	   ! OurNet.pm ournet.conf
 ____________________________________________________________________________
-[  1725] By: autrijus@autricvic                    on 2001/09/06 00:40:50
+[  1725] By: autrijus@autricvic                    on 2001/09/05 09:40:50
 	Log: * enables posting via 1.6.
 	     * fixes groups extra keys.
        Path: .
 	   ! OurNet.pm
 ____________________________________________________________________________
-[  1720] By: autrijus@autribsd                     on 2001/09/05 22:42:20
+[  1720] By: autrijus@autribsd                     on 2001/09/05 07:42:20
 	Log: * ournet conf update
        Path: .
 	   + ournet.conf
 ____________________________________________________________________________
-[  1485] By: autrijus@autricvic                    on 2001/07/24 22:44:28
+[  1485] By: autrijus@autricvic                    on 2001/07/24 07:44:28
 	Log: * fix prev/next error on deleted articles. (thanks werther)
        Path: .
 	   ! OurNet.pm
 ____________________________________________________________________________
-[  1475] By: autrijus@autricvic                    on 2001/07/22 22:46:01
+[  1475] By: autrijus@autricvic                    on 2001/07/22 07:46:01
 	Log: * really fixes things now.
        Path: templates
 	   ! board;ournet;default
        Path: .
 	   ! OurNet.pm
 ____________________________________________________________________________
-[  1472] By: autrijus@autribsd                     on 2001/07/22 12:19:39
+[  1472] By: autrijus@autribsd                     on 2001/07/21 21:19:39
 	Log: * deleted article support.
        Path: templates
 	   ! board;ournet;default
        Path: .
 	   ! OurNet.pm
 ____________________________________________________________________________
-[  1471] By: autrijus@autribsd                     on 2001/07/21 15:21:06
+[  1471] By: autrijus@autribsd                     on 2001/07/21 00:21:06
 	Log: * preliminary support for console (Standalone) input
 	     * corrected a few default-melix bugs
        Path: .
 	   ! OurNet.pm ournet.pl
 ____________________________________________________________________________
-[  1469] By: autrijus@autricvic                    on 2001/07/20 20:00:06
+[  1469] By: autrijus@autricvic                    on 2001/07/20 05:00:06
 	Log: * ournet.pl could now use mailbox over OurNet
 	     * metalist directory reorganization
        Path: .
 	   ! ournet.pl
 ____________________________________________________________________________
-[  1452] By: autrijus@autricvic                    on 2001/07/16 19:38:03
+[  1452] By: autrijus@autricvic                    on 2001/07/16 04:38:03
 	Log: * nobr.
        Path: templates
 	   ! board;ournet;default
 ____________________________________________________________________________
-[  1419] By: autrijus@autricvic                    on 2001/07/13 01:27:04
+[  1419] By: autrijus@autricvic                    on 2001/07/12 10:27:04
 	Log: * the mandatory file. :)
        Path: .
 	   + Changes
 ____________________________________________________________________________
-[  1418] By: autrijus@autricvic                    on 2001/07/13 01:26:23
+[  1418] By: autrijus@autricvic                    on 2001/07/12 10:26:23
 	Log: * oops! thanks rabit for pointing out.
        Path: templates
 	   ! group;ournet;default
 ____________________________________________________________________________
-[  1417] By: autrijus@autricvic                    on 2001/07/13 01:26:13
+[  1417] By: autrijus@autricvic                    on 2001/07/12 10:26:13
 	Log: * placeholder OurNet.pm to prevent mischief
        Path: .
 	   + OurNet.pm
 ____________________________________________________________________________
-[  1401] By: autrijus@autricvic                    on 2001/07/10 18:34:39
+[  1401] By: autrijus@autricvic                    on 2001/07/10 03:34:39
 	Log: * slash-ournet integration
        Path: templates
 	   + article;ournet;default board;ournet;default

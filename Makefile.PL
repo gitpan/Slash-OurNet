@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 # $File: //depot/metalist/plugins/OurNet/Makefile.PL $ $Author: autrijus $
-# $Revision: #1 $ $Change: 1962 $ $DateTime: 2001/10/05 23:24:56 $
+# $Revision: #2 $ $Change: 2427 $ $DateTime: 2001/11/26 08:16:42 $
 
 use ExtUtils::MakeMaker;
 

@@ -1,25 +1,26 @@
 __section__
 default
 __description__
-Print out all the articles
+Display a single article
 
-* title = passed to titlebar
-* width = passed to titlebar
-* articles = all articles
-* display = 'edit' for edit mode rendering
+* article = the Article object
+* board = the Board object aritcle belongs to
+* group = the Group object board belongs to
+* child = the ArticleGroup type: 'archive', 'article' or 'mailbox'
+* message = any additonal prompts
 
 __title__
 
 __page__
 ournet
 __lang__
-zh_TW
+en_US
 __name__
 article
 __template__
 [% USE Slash %]
 [% message %]
-<TABLE BORDER="1" WIDTH="100%"><caption>
+<TABLE BORDER="0" WIDTH="100%"><caption>
 <FORM action="ournet.pl" method="post">
     <INPUT type="hidden" name="child" value="[% child %]">
     <INPUT type="hidden" name="board" value="[% board %]">
@@ -27,7 +28,7 @@ __template__
 <nobr><FONT FACE="[% constants.mainfontface %] COLOR="[% user.fg.0 %]"><strong>
 <a name='top'>
 [% IF display == 'edit' %]
-標題:
+Subject:
 <INPUT type="text" name="title" value="[% article.header.Subject %]" size=30 maxlength=60>
 <INPUT type="hidden" name="reply" value="[% reply %]">
 <INPUT type="hidden" name="state" value="1">
@@ -40,13 +41,13 @@ __template__
 
     <tr>
     <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    作者
+    From
     </nobr></font></td>
     <td size="30%" align="center" BGCOLOR="[% user.bg.1 %]"><nobr>
     [% article.header.From %]
     </nobr></td>
     <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    看版
+    Board
     </nobr></font></td>
     <td size="30%" 
 [% IF child != 'articles' %] colspan=2 [% END %]
@@ -55,21 +56,21 @@ __template__
     </nobr></td>
 [% IF display == 'edit' %]
     <td align=center rowspan=2 size="5%" BGCOLOR="[% user.bg.3 %]">
-	<INPUT TYPE="submit" NAME="submit" VALUE="發表">
+	<INPUT TYPE="submit" NAME="submit" VALUE="Post">
     </td>
 [% ELSIF child == 'articles' %]
     <td align=center rowspan=2 size="5%" BGCOLOR="[% user.bg.3 %]">
     [% IF user.nickname == 'guest'  %]
-	<INPUT TYPE="button" NAME="submit" VALUE="回覆">
+	<INPUT TYPE="button" NAME="submit" VALUE="Reply">
     [% ELSE %]
-	<INPUT TYPE="submit" NAME="submit" VALUE="回覆">
+	<INPUT TYPE="submit" NAME="submit" VALUE="Reply">
     [% END %]
     </td>
 [% END %]
     </tr>
     <tr>
     <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    時間
+    Date
     </nobr></font>
     </td>
     <td size="30%"
@@ -96,7 +97,7 @@ __template__
 </nobr></font></td>
 <td colspan=2 BGCOLOR="[% user.bg.1 %]"><nobr><a class="link" href="ournet.pl?op=article&group=[% group %]&child=[% child %]&board=[% board %]&name=[% name %]">[% header.Subject %]</a></nobr></td>
 <td align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-作者
+Author
 </nobr></font></td>
 <td align="center" BGCOLOR="[% user.bg.1 %]"><nobr>[% author %]</nobr></td>
 </tr>[% END %]
@@ -106,14 +107,14 @@ __template__
     |
 [% IF child == "articles" %]
     [% IF archives_count > 0 %]
-    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=archives"> 精華區</a>
+    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=archives"> Archives</a>
     |
     [% END %]
 [% ELSE %]
-    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=articles">回看版</a>
+    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=articles">Back to board</a>
     |
 [% END %]
-    <a href="ournet.pl?op=board&group=[% article.group %]&board=[% article.board %]&child=[% child %]">回文章列表</a>
+    <a href="ournet.pl?op=board&group=[% article.group %]&board=[% article.board %]&child=[% child %]">Back to article list</a>
     |
     <a href='#top'>Top</a>
     |

@@ -1,8 +1,8 @@
 name=OurNet
+description="OurNet::BBS Connectivity"
 htdoc=ournet.pl
 htdoc=ournet.conf
 htdoc=archive.gif
-description=OurNet provides connectivity to OurNet-based BBS sites.
 template=templates/board;ournet;default
 template=templates/group;ournet;default
 template=templates/article;ournet;default

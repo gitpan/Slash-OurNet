@@ -6,6 +6,7 @@ Print out all the articles
 * title = passed to titlebar
 * width = passed to titlebar
 * articles = all articles
+
 __title__
 
 __page__
@@ -19,7 +20,7 @@ __template__
 
 <table width=100% cellpadding=3 cellspacing=0 border=1
              bordercolor="#78859d">
-    <tr><td>標題</td><td>作者</td><td>日期</td></tr>
+    <tr><td>Subject</td><td>From</td><td>Date</td></tr>
 [% FOREACH articles %]
     <tr><td>
     <a class="link" href="[% url %]">[% title %]</a>

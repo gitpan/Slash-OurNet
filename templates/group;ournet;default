@@ -4,7 +4,9 @@ __description__
 Print out all groups / boards inside a group
 
 * boards = all groups / boards
+* message = any additonal prompts
 * display = 'root': hide name and article_count panels
+
 __title__
 
 __page__
@@ -15,25 +17,25 @@ __name__
 group
 __template__
 [% USE Slash %]
-<TABLE BORDER="1" WIDTH="100%">
+<TABLE BORDER="0" WIDTH="100%">
 <caption><nobr><FONT FACE="[% constants.mainfontface %] COLOR="[% user.fg.0 %]"><strong>
 [% message %]
 </strong></font></nobr></caption>
     <tr>
 [% IF display != 'root' %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
-    名稱
+    Name
     </font></td>
 [% END %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    標題
+    Subject
     <nobr></font></td>
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
-    板主
+    Moderator
     </font></td>
 [% IF display != 'root' %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    文章數
+    Articles
     </nobr></font></td>
     </tr>
 [% END %]
@@ -75,7 +77,7 @@ __template__
     </nobr></td><td width="10%"><nobr>
     [% bm %]
     </nobr></td><td width="10%" align="right">
-    [% articles_count %]
+    [% articles_count + 1 %]
 [% END %]
 [% END %]
 </td></tr>
@@ -84,9 +86,9 @@ __template__
 <div align="center">
 <hr>|
     [% IF group == topclass %]
-<a href="ournet.pl">回首頁</a>
+<a href="ournet.pl">Back to home</a>
     [% ELSE %]
-<a href="ournet.pl?op=group&group=[% topclass %]&board=[% group %]">回群組</a>
+<a href="ournet.pl?op=group&group=[% topclass %]&board=[% group %]">Back to group</a>
     [% END %]
 |</div>
 [% END %]

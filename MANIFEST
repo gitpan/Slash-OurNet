@@ -13,4 +13,4 @@ templates/data;ournet;default
 templates/group;ournet;default
 templates/main;ournet;default
 templates/navigation;ournet;default
-test.pl
+t/use.t
