@@ -1,0 +1,16 @@
+Changes
+MANIFEST
+Makefile.PL
+OurNet.pm
+PLUGIN
+README
+archive.gif
+ournet.conf
+ournet.pl
+templates/article;ournet;default
+templates/board;ournet;default
+templates/data;ournet;default
+templates/group;ournet;default
+templates/main;ournet;default
+templates/navigation;ournet;default
+test.pl

@@ -1,0 +1,11 @@
+name=OurNet
+htdoc=ournet.pl
+htdoc=ournet.conf
+htdoc=archive.gif
+description=OurNet provides connectivity to OurNet-based BBS sites.
+template=templates/board;ournet;default
+template=templates/group;ournet;default
+template=templates/article;ournet;default
+template=templates/data;ournet;default
+template=templates/navigation;ournet;default
+template=templates/main;ournet;default

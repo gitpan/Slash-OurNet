@@ -1,0 +1,142 @@
+__section__
+default
+__description__
+Print out all the articles
+
+* title = passed to titlebar
+* width = passed to titlebar
+* articles = all articles
+__title__
+
+__page__
+ournet
+__lang__
+zh_TW
+__name__
+board
+__template__
+[% USE Slash %]
+<TABLE BORDER="1" WIDTH="100%">
+<caption><nobr><FONT FACE="[% constants.mainfontface %] COLOR="[% user.fg.0 %]"><strong>
+[% IF child == "articles" %]
+    [% IF archives_count > 0 %]
+	<a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=archives"><img width=19 height=16 src="archive.gif" border=0></a>
+    [% END %]
+[% END %]
+[% message %]
+</strong></font></nobr></caption>
+    <tr>
+[% IF display != 'top' %]
+    <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+    編號
+    </nobr></font></td>
+[% END %]
+    <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
+    標題
+    </font></td>
+    <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
+    作者
+    </font></td>
+[% IF display == 'top' %]
+    <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
+    看板
+    </font></td>
+[% END %]
+    <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+    日期
+    </nobr></font></td>
+    </tr>
+[% IF child == 'articles' %]
+<form action="ournet.pl" method="post">
+    <tr>
+    <td BGCOLOR="[% user.bg.1 %]">
+    [% articles_count + 2 %]
+    </td><td BGCOLOR="[% user.bg.1 %]">
+    <INPUT type="hidden" name="op" value="article_edit">
+    <INPUT size=30 maxlength=60 name="title">
+    <input type="hidden" name="child" value="[% child %]">
+    <input type="hidden" name="board" value="[% board %]">
+    <input type="hidden" name="group" value="[% group %]">
+    </td><td width="10%" BGCOLOR="[% user.bg.1 %]">
+    [% user.nickname %]
+    </td><td width="10%" BGCOLOR="[% user.bg.1 %]">
+[% IF user.nickname == 'guest' %]
+    <INPUT TYPE="button" NAME="submit" VALUE="發表">
+[% ELSE %]
+    <INPUT TYPE="submit" NAME="submit" VALUE="發表">
+[% END %]
+    </td></tr>
+</form>
+[% END %]
+<form name='pageform' action="ournet.pl" method="get">
+[% FOREACH articles %]
+    <tr>
+[% IF display != 'top' %]
+    <td width=10% BGCOLOR="[% user.bg.3 %]"><FONT COLOR="[% user.fg.0 %]">
+    [% recno + 1 %]
+    </font></td>
+[% END %]
+    <td width=100%>
+[% IF type == 'deleted' %]
+    [% title %]
+[% ELSIF type == 'article' %]
+    <a class="link" href="ournet.pl?op=article&group=[% group %]&child=[% child %]&board=[% board %]&name=[% name %]">[% title %]</a>
+[% ELSE %]
+    [% IF articles_count > 0 %]
+    <a class="link" href="ournet.pl?op=board&group=[% group %]&child=[% child %]/[% name %]&board=[% board %]">[% title %]</a>
+    [% ELSE %]
+    [% title %]
+    [% END %]
+[% END %]
+    </td><td width="10%"><nobr>
+    [% author %]
+[% IF display == 'top' %]
+    </nobr></td><td width="10%"><nobr>
+    <a class="link" href="ournet.pl?op=board&group=[% topclass %]&child=articles&board=[% board %]">[% board %]</a>
+[% END %]
+    </nobr></td><td><nobr>
+    [% date %]
+    </nobr></td></tr>
+[% END %]
+</table>
+[% IF display != 'top' %]
+<hr>
+<div align='center'>
+<input type="hidden" name="op"    value="board">
+<input type="hidden" name="group" value="[% group %]">
+<input type="hidden" name="board" value="[% board %]">
+<input type="hidden" name="child" value="[% child %]">
+    <FONT FACE="[% constants.mainfontface %]"><nobr>
+    |
+    <a href="ournet.pl?op=group&group=[% topclass %]&board=[% group %]">回群組</a>
+    |
+[% IF child == "articles" %]
+    [% IF archives_count > 0 %]
+    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=archives"> 精華區</a>
+    |
+    [% END %]
+[% ELSE %]
+    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=articles">回看版</a>
+    |
+[% END %]
+</nobr>
+[% IF pages %]
+    第
+<select name="begin" onchange="pageform.submit();">
+    [% FOREACH pages %]
+	[% IF iscurpage %]
+<OPTION SELECTED value="[% begin %]">[% number %]</OPTION>
+	[% ELSE %]
+<OPTION value="[% begin %]">[% number %]</OPTION>
+	[% END %]
+    [% END %]
+</SELECT>
+<input type='submit' name="page" value=" 頁 ">
+    |
+[% END %]
+    </NOBR>
+</div>
+[% END %]
+</FORM>
+__seclev__
+10000

@@ -1,0 +1,123 @@
+__section__
+default
+__description__
+Print out all the articles
+
+* title = passed to titlebar
+* width = passed to titlebar
+* articles = all articles
+* display = 'edit' for edit mode rendering
+
+__title__
+
+__page__
+ournet
+__lang__
+zh_TW
+__name__
+article
+__template__
+[% USE Slash %]
+[% message %]
+<TABLE BORDER="1" WIDTH="100%"><caption>
+<FORM action="ournet.pl" method="post">
+    <INPUT type="hidden" name="child" value="[% child %]">
+    <INPUT type="hidden" name="board" value="[% board %]">
+    <INPUT type="hidden" name="group" value="[% group %]">
+<nobr><FONT FACE="[% constants.mainfontface %] COLOR="[% user.fg.0 %]"><strong>
+<a name='top'>
+[% IF display == 'edit' %]
+標題:
+<INPUT type="text" name="title" value="[% article.header.Subject %]" size=30 maxlength=60>
+<INPUT type="hidden" name="reply" value="[% reply %]">
+<INPUT type="hidden" name="state" value="1">
+[% ELSE %]
+[% article.header.Subject %]
+<INPUT type="hidden" name="reply" value="[% article.name %]">
+[% END %]
+</a></strong></font></nobr>
+</caption>
+
+    <tr>
+    <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+    作者
+    </nobr></font></td>
+    <td size="30%" align="center" BGCOLOR="[% user.bg.1 %]"><nobr>
+    [% article.header.From %]
+    </nobr></td>
+    <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+    看版
+    </nobr></font></td>
+    <td size="30%" 
+[% IF child != 'articles' %] colspan=2 [% END %]
+    align="center" BGCOLOR="[% user.bg.1 %]"><nobr>
+    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=[% child %]">[% board %]</a>
+    </nobr></td>
+[% IF display == 'edit' %]
+    <td align=center rowspan=2 size="5%" BGCOLOR="[% user.bg.3 %]">
+	<INPUT TYPE="submit" NAME="submit" VALUE="發表">
+    </td>
+[% ELSIF child == 'articles' %]
+    <td align=center rowspan=2 size="5%" BGCOLOR="[% user.bg.3 %]">
+    [% IF user.nickname == 'guest'  %]
+	<INPUT TYPE="button" NAME="submit" VALUE="回覆">
+    [% ELSE %]
+	<INPUT TYPE="submit" NAME="submit" VALUE="回覆">
+    [% END %]
+    </td>
+[% END %]
+    </tr>
+    <tr>
+    <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+    時間
+    </nobr></font>
+    </td>
+    <td size="30%"
+[% IF child == 'articles' %] colspan=3 [% ELSE %] colspan=4 [% END %]
+    align="center" BGCOLOR="[% user.bg.1 %]"><nobr>
+    [% article.header.Date %]
+    <INPUT type="hidden" name="op" value="article_edit">
+    </nobr></td>
+    </tr>
+<tr><td colspan=5 bgcolor="black"><font face="fixedsys">
+
+[% IF display == 'edit' %]
+<TEXTAREA name="body" cols=80 rows=20 style="font-familly: Fixedsys, Lucida Console, ming">
+[% article.body %]
+</TEXTAREA>
+[% ELSE %]
+[% article.body %]
+[% END %]
+    </form>
+</font></td></tr>
+[% FOREACH related %]
+<tr><td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+[% relation %]
+</nobr></font></td>
+<td colspan=2 BGCOLOR="[% user.bg.1 %]"><nobr><a class="link" href="ournet.pl?op=article&group=[% group %]&child=[% child %]&board=[% board %]&name=[% name %]">[% header.Subject %]</a></nobr></td>
+<td align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+作者
+</nobr></font></td>
+<td align="center" BGCOLOR="[% user.bg.1 %]"><nobr>[% author %]</nobr></td>
+</tr>[% END %]
+</table>
+<hr><div align='center'>
+    <FONT FACE="[% constants.mainfontface %]"><nobr>
+    |
+[% IF child == "articles" %]
+    [% IF archives_count > 0 %]
+    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=archives"> 精華區</a>
+    |
+    [% END %]
+[% ELSE %]
+    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=articles">回看版</a>
+    |
+[% END %]
+    <a href="ournet.pl?op=board&group=[% article.group %]&board=[% article.board %]&child=[% child %]">回文章列表</a>
+    |
+    <a href='#top'>Top</a>
+    |
+    </nobr>
+</div>
+__seclev__
+10000

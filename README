@@ -1,0 +1,32 @@
+# $File: //depot/metalist/plugins/OurNet/README $ $Author: autrijus $
+# $Revision: #1 $ $Change: 1962 $ $DateTime: 2001/10/05 23:24:56 $
+
+This is the README file for Slash::OurNet, a Slash 2.0+ plug-in
+that allows OurNet connectivity to various BBS and NNTP systems,
+by Elixir Group and OurInternet Inc.
+
+* Installation
+
+You could either copy the whole distribution under the plugins/
+directory before installing Slash, or use the standard perl module
+install process:
+
+perl Makefile.PL
+make
+make install
+
+and then use the bin/install-plugin utility (usually located in
+/usr/local/slash/bin/) to install it as a feature of your site.
+
+please remember to change the ournet.conf settings to suit the
+specific configurations of your bbscomd daemon. See related 
+documentations in the OurNet::BBS distribution for an overview.
+
+* Copyright
+
+Copyright 2001 by Autrijus Tang <autrijus@autrijus.org>,
+
+All rights reserved.  You can redistribute and/or modify
+this bundle under the same terms as Perl itself.
+
+See <http://www.perl.com/perl/misc/Artistic.html>.
