@@ -1,5 +1,5 @@
-# $File: //depot/metalist/src/plugins/OurNet/README $ $Author: autrijus $
-# $Revision: #1 $ $Change: 1 $ $DateTime: 2002/06/11 08:35:12 $
+# $File: //depot/metalist/src/plugins/OurNet/README $ $Author: werther $
+# $Revision: #3 $ $Change: 876 $ $DateTime: 2002/09/11 15:11:54 $
 
 This is the README file for Slash::OurNet, a Slash 2.0+ plug-in
 that allows OurNet connectivity to various BBS and NNTP systems,
@@ -11,7 +11,6 @@ You could either copy the whole distribution under the plugins/
 directory before installing Slash, or use the standard perl module
 install process:
 
-cpansign verify
 perl Makefile.PL
 make
 make install
@@ -19,18 +18,7 @@ make install
 and then use the bin/install-plugin utility (usually located in
 /usr/local/slash/bin/) to install it as a feature of your site.
 
-Alternatively, you may also run the ourinet.pl file independently
-from a mod_perl or CGI environment.  If you don't have a web
-server handy, use this to create a dedicated HTTP::Daemon server:
-
-perl ournet.pl -d
-
-If you are only interested in serving your local BBS to yourself,
-try this:
-
-perl ournet.pl -d -l
-
-Please remember to change the ournet.conf settings to suit the
+please remember to change the ournet.conf settings to suit the
 specific configurations of your bbscomd daemon. See related 
 documentations in the OurNet::BBS distribution for an overview.
 

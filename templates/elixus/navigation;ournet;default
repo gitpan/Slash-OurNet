@@ -53,7 +53,7 @@ __template__
 <INPUT type='hidden' name='group' value='[% topclass %]'>
 <INPUT type='hidden' name='child' value='articles'>
 <INPUT type='text'   name='board' size=15 maxlength=20>
-<INPUT type='submit' value='[% loc('Go') %]'>
+<INPUT type='submit' value='[% loc('Go_Page') %]'>
 </FORM>
 </td></tr></table><hr>
 __seclev__

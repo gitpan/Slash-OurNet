@@ -1,69 +1,56 @@
-# $File: //depot/metalist/src/plugins/OurNet/OurNet.pm $ $Author: clkao $
-# $Revision: #4 $ $Change: 582 $ $DateTime: 2002/08/05 09:52:13 $
+# $File: //depot/metalist/src/plugins/OurNet/lib/Slash/OurNet.pm $ $Author: clkao $
+# $Revision: #25 $ $Change: 5066 $ $DateTime: 2003/03/31 09:24:35 $
 
 package Slash::OurNet;
 
-our $VERSION = '1.3';
-our @ISA = qw/Slash::DB::Utility Slash::DB::MySQL/ if $ENV{SLASH_USER};
+our $VERSION = '1.4';
 
 use strict;
 use warnings;
-use base 'Locale::Maketext';
-use Locale::Maketext::Lexicon {
-    en    => [Gettext => 'en.po'],
-    zh_tw => [Gettext => 'zh_tw.po'],
-};
+no warnings qw(once redefine);
 
-use Text::Wrap;
 use Date::Parse;
 use Date::Format;
-use OurNet::BBS;
+use File::Spec;
+use File::Basename;
+use Lingua::ZH::Wrap;
 
-if ($ENV{SLASH_USER}) { eval << '.';
-    use Slash;
-    use Slash::DB;
-    use Slash::Display;
-    use Slash::Utility;
-.
-} else { eval << '.';
-    Slash::OurNet::Standalone->import();
-    sub timeCalc {
-	return scalar localtime;
-    }
+use constant PATH  => File::Spec->rel2abs(dirname($ENV{SCRIPT_FILENAME} or $0));
+use constant SLASH => $ENV{SLASH_USER};
 
-    sub getCurrentUser {
-	my ($self, $key) = @_;
-	return unless $key;
+use lib PATH . '/lib';
+use base 'Locale::Maketext';
+use Locale::Maketext::Lexicon {
+    en    => [ Gettext => PATH . '/po/en.po' ],
+    zh_tw => [ Gettext => PATH . '/po/zh_tw.po' ],
+    zh_cn => [ Gettext => PATH . '/po/zh_cn.po' ],
+};
 
-	if ($key eq 'is_anon') {
-		    return ($key eq $Slash::OurNet::DefaultUser);
-	}
-	elsif ($key eq 'off_set') {
-		    require Time::Local;
-		    return ((timegm(localtime) - timegm(gmtime)) / 3600);
-	}
-    }
-.
-	die $@ if $@;
-}
+use if  SLASH, 'Slash';
+use if  SLASH, 'Slash::DB';
+use if  SLASH, 'Slash::Display';
+use if  SLASH, 'base' => qw(Slash::DB::Utility Slash::DB::MySQL);
+use if !SLASH, 'Slash::OurNet::Standalone';
+Slash::OurNet::Standalone->import unless SLASH;
 
-no warnings qw/once redefine/;
-
-$Text::Wrap::columns = 75;
+$Lingua::ZH::Wrap::columns = 75;
 $OurNet::BBS::Client::NoCache = 1; # avoids bloat
 
-our ($TopClass, $MailBox, $Organization, @Connection, $SecretSigils, 
+our %Lexicon = ( _AUTO => 1 );
+our ($TopClass, $MailBox, $Organization, @Connection, $SecretSigils,
      $BoardPrefixLength, $GroupPrefixLength, $Strip_ANSI, $Use_RealEmail,
      $Thread_Prev, $Date_Prev, $Thread_Next, $Date_Next, $Language, $Colors,
-     $DefaultUser);
-
-our %CachedTop;
-
-(my $pathname = $0) =~ s/.\w+$/.conf/; do $pathname;
+     $DefaultUser, %CachedTop, $LanguageHandle, $SourceEncoding, $Theme,
+     $TrappedExcept, $ALLBBS);
 
 sub loc {
-    __PACKAGE__->get_handle->maketext(@_);
+    use Encode;
+    return decode_utf8(($LanguageHandle ||= __PACKAGE__->get_handle($Language))->maketext(@_));
 }
+
+BEGIN { do(PATH . '/ournet.conf'); die $@ if $@ }
+
+use OurNet::BBS $SourceEncoding;
 
 sub new {
     return unless @_; # to satisfy pudge's automation scripts
@@ -85,14 +72,16 @@ sub article_save {
     $child ||= 'articles';
     my $artgrp = $self->{bbs}{boards}{$board};
 
+    $body = ($body);
+
     # honor 75-column tradition of legacy BBS systems
     $body = wrap('','', $body) if $body and length($body) > 75;
 
-	no warnings 'uninitialized';
+    no warnings 'uninitialized';
     my $offset = sprintf("%+0.4d", getCurrentUser('off_set') / 36);
     $offset =~ s/([1-9][0-9]|[0-9][1-9])$/$1 * 0.6/e;
 
-    if ($Use_RealEmail and $ENV{SLASH_USER}) {
+    if ($Use_RealEmail and SLASH) {
 	$name = getCurrentUser('realemail');
 	$nick = getCurrentUser('nickname');
     }
@@ -113,10 +102,12 @@ sub article_save {
     my $error; # error message
 
     $error .= loc('Please enter a subject.<hr>')
-	unless (length($article->{header}));
+	unless (length($article->{header}{Subject}));
     $error = '&nbsp;' unless $state;
 
+    $PerlIO::via::trap::PASS = 1 if $TrappedExcept eq 'post';
     $artgrp->{articles}{$artid || ''} = $article unless $error;
+    $PerlIO::via::trap::PASS = 0 if $TrappedExcept eq 'post';
 
     return ($article, $error);
 }
@@ -139,7 +130,7 @@ sub article {
     # number OR name
     my $article	= ($artid =~ /^\d+$/ ? $artgrp->[$artid] : $artgrp->{$artid});
 
-    my $related = $is_reply ? [] :  $self->related_articles(
+    my $related = ($is_reply || $child =~ m/^archives/) ? [] :  $self->related_articles(
 	[ group => $group, board => $board, child => $child ],
 	$artgrp, $article,
     ); # do not calculate related article during reply
@@ -151,6 +142,8 @@ sub article {
 
 sub related_articles {
     my ($self, $params, $artgrp, $article) = @_;
+    return unless $article;
+
     my $header	= $article->{header};
     my $recno	= $article->recno;
     my $size	= $#{$artgrp};
@@ -233,14 +226,17 @@ sub board {
 
     die "permission denied"
         if $child ne 'mailbox' and $SecretSigils and
-	    index($SecretSigils, substr($artgrp->{title}, 4, 2)) > -1;
+	    index(substr($artgrp->{title}, 0, index($artgrp->{title}, ' ')), $SecretSigils) > -1;
 
     foreach my $chunk (split('/', $child)) {
 	$artgrp = $artgrp->{$chunk};
     }
 
+    die "permission denied"
+	if $artgrp->can('readlevel') and $artgrp->readlevel and $artgrp->readlevel ne 4294967295;
+
     my $reversed = ($child eq 'articles' or $child eq 'mailbox');
-    my $size = $#{$artgrp};
+    my $size = eval { $#{$artgrp} } || 0;
 
     $begin = $reversed ? ($size - $PageSize + 1) : 0
 	unless defined $begin;
@@ -280,8 +276,19 @@ sub board {
 
 sub group {
     my ($self, $group, $board) = @_;
-    $board = (split('/', $group))[-1] unless $board;
-    my $boards = $self->{bbs}{groups}{$board}{groups};
+    my $boards;
+    
+    $self->{bbs}{groups}->toplevel($TopClass);
+
+    if ($board eq $TopClass) {
+	$boards = $self->{bbs}{groups};
+    }
+    else {
+#	$group =~ s|^\Q$TopClass\E/?||;
+	$boards = ($group =~ m!^\Q$TopClass\E/?$!)
+	    ? $self->{bbs}{groups}{$board}
+	    : $self->{bbs}{groups}{$group}{$board};
+    }
 
     my ($thisgroup, $title, $bm, $etc);
 
@@ -297,6 +304,7 @@ sub group {
     }
 
     local $_;
+    $title ||= '';
     my $title2 = substr($title, $GroupPrefixLength);
     $title2 =~ s|^[^/]+/\s+||; # XXX: melix special case
 
@@ -308,7 +316,7 @@ sub group {
 #    $boards->refresh;
 
     return ($self->mapBoards(
-	$board,
+	"$group/$board",
 	map { 
 	    $boards->{$_} 
 	} sort {
@@ -393,8 +401,8 @@ sub mapArticles {
 
 sub mapArticle {
     my ($self, $group, $board, $child, $artid, $article, $is_reply) = @_;
-    my $header = { %{$article->{header}} };
-    my $title = $header->{Subject};
+    my $header = { %{$article->{header} || {}} };
+    my $title = $header->{Subject} || '(untitled)';
     $header->{Subject} =~ s/\x1b\[[\d\;]*m//g; 
 
     return {
@@ -423,13 +431,11 @@ sub mapBoards {
 	my ($title, $date, $bm);
 
 	if ($_->REF =~ /Group$/) {
-	    $board = $_->group;
+	    $title = $_->{title} or next;
 
-	    if ($title = $_->{title}) {
-		$title =~ s|^[^/]+/\s+||;
-		$bm = $_->{owner};
-		$bm = '' if $bm =~ /\W/; # XXX melix 0.8 bug
-	    }
+	    $board = $1 if $title =~ s|^([^/]+)/\s+||;
+	    $bm = $_->{owner};
+	    $bm = '' if $bm =~ /\W/; # XXX melix 0.8 bug
 
 	    $type = 'group';
 	}
@@ -443,9 +449,7 @@ sub mapBoards {
 	    $title = substr($_->{title}, $BoardPrefixLength) or next;
 	}
 
-        next if $SecretSigils and index(
-	    $SecretSigils, substr($_->{title}, 4, 2)
-	) > -1;
+        next if $SecretSigils and index(substr($_->{title}, 0, index($_->{title}, ' ')), $SecretSigils) > -1;
 
         next if $TopClass and $board eq $TopClass;
 
@@ -456,12 +460,12 @@ sub mapBoards {
 	    group	=> $group,
 	    board	=> $board,
 	    type	=> $type,
-	    archives_count => (
-		($type eq 'group') ? '' : $#{$_->{archives}}
-	    ),
-	    articles_count => (
-		($type eq 'group') ? '&nbsp;' : $#{$_->{articles}}
-	    ),
+#	    archives_count => (
+#		($type eq 'group') ? '' : $#{$_->{archives}}
+#	    ),
+#	    articles_count => (
+#		($type eq 'group') ? '&nbsp;' : $#{$_->{articles}}
+#	    ),
 	};
 
 	if ($type eq 'group') {
@@ -485,7 +489,7 @@ sub txt2html {
 	$body =~ s/^(.+)\n+--+\n.+/$1/sg;
 	$body =~ s/\n+/\n: /g;
 	$body =~ s/\n: : : .*//g;
-	$body =~ s/\n: : ¡° .*//g;
+	$body =~ s/\n: : â€» .*//g;
 	$body =~ s/: \n+/\n/g;
 	$body = sprintf(loc("*) %s wrote:")."\n: %s", $article->{header}{From}, $body);
     }
@@ -504,7 +508,7 @@ sub txt2html {
 	$body =~ s/<\/TT>//g;
 
 	$body = << ".";
-<font face="fixedsys, lucida console, terminal, vga, monospace">
+<font class="text1" face="fixedsys, lucida console, terminal, vga, monospace">
 $body
 </font>
 .
@@ -515,180 +519,6 @@ $body
     }
 
     return $body;
-}
-
-
-package Slash::OurNet::Standalone;
-
-require CGI;
-use base 'Exporter';
-
-our @EXPORT = qw(
-    getCurrentVirtualUser getCurrentForm getCurrentStatic slashDisplay
-    getCurrentDB getUser getCurrentUser createEnvironment header
-    titlebar footer SetCookie
-);
-
-our %Sessions;
-
-sub header {
-    print "<title>@_</title>";
-}
-
-sub footer {
-    print "<hr>@_</body></html>";
-}
-
-sub titlebar {
-    shift;
-    print "<h3>@_</h3>";
-}
-sub getCurrentVirtualUser {
-    return 'guest';
-}
-
-sub getCurrentForm {
-    my $flavor = 'OurNetBBS';
-    my ($cookie);
-
-    require SDBM_File;
-    if (!%Sessions) {
-	use Fcntl;
-	tie(%Sessions, 'SDBM_File', 'ournet.db', O_RDWR|O_CREAT, 0666);
-    }
-
-    require CGI::Cookie;
-
-    my $CGI = CGI->new;
-    my $vars = {%{$CGI->Vars}};
-    $CGI->delete_all;
-
-    if (exists $vars->{op} and $vars->{op} eq 'userlogin') {
-	my ($uid, $pwd) = @{$vars}{qw/unickname upasswd/};
-	unless ( (scalar keys %{Slash::OurNet::ALLBBS})) {
-	    warn "no available bbs object";
-    		$Slash::OurNet::ALLBBS{guest} ||= Slash::OurNet->new(
-		    getCurrentVirtualUser(), (@Connection,  () ));
-	}
-
-	my $bbs = (values(%{Slash::OurNet::ALLBBS}))[0]->{bbs}; # XXX
-	if (exists $bbs->{users}{$uid}) {
-	    my $user = $bbs->{users}{$uid};
-	    my $crypted = $user->{passwd};
-	    if (crypt($pwd, $crypted) eq $crypted) {
-		my $val = SetCookie();
-		$Sessions{$val} = $vars->{unickname};
-		$cookie = CGI::Cookie->new(-value => $val);
-	    }
-	}
-    }
-    else {
-	my %cookies = CGI::Cookie->fetch;
-	$cookie = $cookies{$flavor} if exists $cookies{$flavor};
-    }
-
-    if (ref($cookie) and $Sessions{$cookie->value}) {
-        if (exists $vars->{op} and $vars->{op} eq 'userclose') {
-	    delete $Sessions{$cookie->value};
-        }
-	else {
-	    my $sescook = CGI::Cookie->new(
-		-name    => $flavor,
-		-value   =>  $cookie->value,
-		-expires =>  '+1h',
-		-domain  =>  $cookie->domain
-	    );
-
-	    print "Set-Cookie: $sescook\n";
-	    $vars->{uid} = $Sessions{$cookie->value};
-	}
-    }
-
-    print "Content-Type: text/html";
-    print "; charset=big5" if $Slash::OurNet::Language eq 'zh_TW';
-    print "\n\n";
-
-    return $vars;
-}
-
-sub getCurrentStatic {
-}
-
-sub getCurrentDB {
-    my $a;
-    return bless \$a, __PACKAGE__;
-}
-
-sub getUser {
-    my ($self, $uid, $key) = @_;
-
-    return $uid if $key eq 'nickname';
-    if ($key eq 'fakeemail') {
-	my $bbs = $Slash::OurNet::ALLBBS{$uid}{bbs};
-	my $user = $bbs->{users}{$uid};
-	return $user->{username};
-    }
-}
-
-sub getCurrentUser {
-    my ($self, $key) = @_;
-    return unless $key;
-
-    if ($key eq 'is_anon') {
-		return ($key eq $Slash::OurNet::DefaultUser);
-    }
-    elsif ($key eq 'off_set') {
-		require Time::Local;
-		return ((timegm(localtime) - timegm(gmtime)) / 3600);
-    }
-}
-
-my $template;
-
-sub slashDisplay {
-    my ($file, $vars) = @_;
-    my $path = exists $ENV{SCRIPT_FILENAME} ? $ENV{SCRIPT_FILENAME} : $0;
-    $path =~ s|[\\/][^\\/]+$|/templates| or $path = './templates';
-    $path = "$path/$file;ournet;default";
-
-    $vars->{user} = $Slash::OurNet::Colors;
-    $vars->{user}{nickname} = $vars->{username};
-    $vars->{user}{fakeemail} = $vars->{usernick};
-    $vars->{user}{is_anon}  = ($vars->{username} eq $DefaultUser);
-
-    local $/;
-    open my $fh, $path or die "cannot open template: $path ($!)";
-    my $text = <$fh>;
-    $text =~ s/.*\n__template__\n//s;
-    $text =~ s/__seclev__\n.*//s;
-
-    my $ah = Slash::OurNet->get_handle;
-
-    require Template;
-    $template ||= Template->new(
-	FILTERS		=> {
-	    l		=> [ sub { $ah->maketext(@_) } ],
-	},
-	VARIABLES	=> {
-	    loc		=> sub { $ah->maketext(@_) },
-	},
-    );
-    return $template->process(\$text, $vars) || die($template->error);
-}
-
-sub createEnvironment {
-}
-
-sub SetCookie {
-    my $flavor  = shift || 'OurNetBBS';
-    my $sescook = CGI::Cookie->new(
-	-name    => $flavor,
-        -value   =>  crypt(time, substr(CGI::remote_host(), -2)),
-        -expires =>  '+1h'
-    );
-
-    print "Set-Cookie: $sescook\n";
-    return $sescook->value;
 }
 
 1;

@@ -1,4 +1,4 @@
-# Traditional Chinese localization catalog for Slash OurNet (RG)
+# Simplified Chinese localization catalog for Slash OurNet
 # Copyright (c) 2002 by OurInternet, Inc.
 # FIRST AUTHOR: Autrijus Tang <autrijus@autrijus.org>, June 2002
 #
@@ -14,25 +14,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "Please enter a subject.<hr>"
-msgstr "請輸入標題.<hr>"
+msgstr "请输入标题.<hr>"
 
 msgid "<< This article has been deleted >>"
-msgstr "<< 本文章經作者刪除 >>"
+msgstr "<< 本文章经作者删除 >>"
 
 msgid "*) %s wrote:"
-msgstr "※ 引述《%s》之銘言："
+msgstr "※ 引述《%s》之铭言："
 
 msgid "You haven't logged in. Please press login in the left side bar."
-msgstr "你尚未登入. 請按左方的登入選項."
+msgstr "你尚未登入. 请按左方的登入选项."
 
 msgid "No such board.<hr>"
-msgstr "無此看板.<hr>"
+msgstr "无此看板.<hr>"
 
 msgid "<div align=\"center\">[ <a href=\"%s\">Back to main menu</a> ]</div>"
-msgstr "<div align=\"center\">[ <a href=\"%s\">回主畫面</a> ]</div>"
+msgstr "<div align=\"center\">[ <a href=\"%s\">回主画面</a> ]</div>"
 
 msgid "Subject"
-msgstr "標題"
+msgstr "标题"
 
 msgid "From"
 msgstr "作者"
@@ -41,19 +41,19 @@ msgid "Board"
 msgstr "看版"
 
 msgid "Post"
-msgstr "發表"
+msgstr "发表"
 
 msgid "Reply"
 msgstr "回覆"
 
 msgid "Date"
-msgstr "時間"
+msgstr "时间"
 
 msgid "Author"
 msgstr "作者"
 
 msgid "Archives"
-msgstr "精華區"
+msgstr "精华区"
 
 msgid "Back to board"
 msgstr "回看版"
@@ -62,34 +62,34 @@ msgid "Back to article list"
 msgstr "回文章列表"
 
 msgid "Top"
-msgstr "頁首"
+msgstr "页首"
 
 msgid "No."
-msgstr "編號"
+msgstr "编号"
 
 msgid "Back to group"
-msgstr "回群組"
+msgstr "回群组"
 
 msgid "Back to archives"
-msgstr "精華區"
+msgstr "精华区"
 
-msgid "Page"
+msgid "Page "
 msgstr "第"
 
 msgid "Go_Page"
-msgstr "頁"
+msgstr "页"
 
 msgid "Name"
-msgstr "名稱"
+msgstr "名称"
 
 msgid "Moderator"
 msgstr "板主"
 
 msgid "Articles"
-msgstr "文章數"
+msgstr "文章数"
 
 msgid "Back to home"
-msgstr "回首頁"
+msgstr "回首页"
 
 msgid "Select board"
 msgstr "跳到"
@@ -98,13 +98,13 @@ msgid "Go_Board"
 msgstr "看板"
 
 msgid "Home"
-msgstr "首頁"
+msgstr "首页"
 
 msgid "Username:"
-msgstr "帳號:"
+msgstr "帐号:"
 
 msgid "Password:"
-msgstr "密碼:"
+msgstr "密码:"
 
 msgid "Login"
 msgstr "登入"
@@ -113,16 +113,16 @@ msgid "Log out"
 msgstr "登出"
 
 msgid "Search:"
-msgstr "搜尋:"
+msgstr "搜寻:"
 
 msgid "Go_Submit"
 msgstr "送出"
 
 msgid "Preferences"
-msgstr "設定"
+msgstr "设定"
 
 msgid "<a href=\"mailto:%1\">Bug report</a>"
-msgstr "<a href=\"mailto:%1\">問題回報</a>"
+msgstr "<a href=\"mailto:%1\">问题回报</a>"
 
 msgid "OurNet BBS"
 msgstr "OurNet BBS"
@@ -134,7 +134,7 @@ msgid "Previous"
 msgstr "上一篇"
 
 msgid "Follow-up"
-msgstr "後續"
+msgstr "后续"
 
 msgid "Next"
 msgstr "下一篇"
@@ -143,10 +143,4 @@ msgid "guest"
 msgstr "guest"
 
 msgid "Visitor"
-msgstr "天外來客"
-
-msgid "Top Articles"
-msgstr "本日熱門話題"
-
-msgid "Mailbox"
-msgstr "我的郵件"
+msgstr "天外来客"

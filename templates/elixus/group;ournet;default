@@ -58,7 +58,7 @@ __template__
     <td width=20% BGCOLOR="[% user.bg.0 %]"><nobr>
 	<a class="link" href="[% script %]/[% group %]/[% board %]/articles/">[% board %]</a>
 	[% IF archives_count %]
-	<a title="[% etc_brief %]" href="[% script %]/[% group %]/[% board %]/archives/"><img width=16 height=16 src="[% imagedir %]/archive.gif" border=0></a>
+	<a title="[% etc_brief %]" href="[% script %]/[% group %]/[% board %]/archives/"><img width=16 height=16 src="[% imagedir %]/archive.png" border=0></a>
 	[% END %]
     </nobr></td><td width="60%">
     [% END %]

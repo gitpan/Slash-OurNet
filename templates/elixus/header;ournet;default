@@ -16,7 +16,7 @@ __template__
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML>
 <HEAD>
-<META Http-Equiv="Content-Type" Content="text/html; charset=big5">
+<META Http-Equiv="Content-Type" Content="text/html; charset=utf-8">
 <TITLE>[% organization %]</TITLE>
 <STYLE>
 a:link { text-decoration: none }
@@ -30,7 +30,7 @@ h3 { background: [% user.bg.1 %]; margin: 0 0 0 0 }
 <TABLE CELLSPACING=0 CELLPADDING=0 BORDER=0 WIDTH=100%>
 <tr valign=middle BGCOLOR="[% user.bg.1 %]" TEXT="[% user.fg.1 %]">
 <td>
-<a href="[% script %]"><img src="[% imagedir %]/ournet.gif" alt="[[% loc('Home') %]]" border=0 align=left width=48 height=48></a>
+<a href="[% script %]"><img src="[% imagedir %]/elix.png" alt="[[% loc('Home') %]]" border=0 align=left width=48 height=48></a>
 </td>
 <td><FORM METHOD=POST ACTION="[% slash ? 'users.pl' : script %]">
 [% IF user.is_anon %]
@@ -52,7 +52,7 @@ h3 { background: [% user.bg.1 %]; margin: 0 0 0 0 }
 <INPUT TYPE="HIDDEN" NAME="op" VALUE="search">
 <font size=-1>[% loc('Search:') %]</I></font>
 <input size=8 name="query">
-<input type=button value="[% loc('Go') %]">
+<input type=button value="[% loc('Go_Submit') %]">
 </form>
 </TD></TR>
 <TR><td colspan=3 valign=top>

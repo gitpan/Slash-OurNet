@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.05.
+signed via the Module::Signature module, version 0.38.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -14,31 +14,55 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 9eec8b7ea502723a2721d6e7fba37e93199f4bae Changes
-SHA1 fe5a35f6511733fd82aeeb4204d263d8875ea952 MANIFEST
-SHA1 110cdd87dfae95b48b619c25f105e9bf88183ef3 Makefile.PL
-SHA1 7a3c7fe4599570bf55bcc556303997ad1eb08a0f OurNet.pm
-SHA1 4403a9d2b75f1b7613c1d9014f8c40102a6723c6 PLUGIN
-SHA1 6ccfb2a7b33984fa488015bedcd0c7b70a12e44e README
-SHA1 45a8367c7d12aaf65c9fc9f9fde86008186ea5b8 images/archive.gif
-SHA1 20f4b092e3421d580d6ffd8c44f315a2e29bcab6 images/ournet.gif
-SHA1 668fa4a789258e6bd5e172cfcbcf3fa1ddfdf152 ournet.conf
-SHA1 2ffd9672f901e89dff453837588535dbaedd4e04 ournet.pl
+SHA1 daaa59fdd76d4ccad8be7f0a6c3af53c08735d6d Changes
+SHA1 0cbb1be5017ac92cb59ff77455d8766f0a4d1aa1 MANIFEST
+SHA1 f870a27c774f571428baae491f6adfa2801d7f3e META.yml
+SHA1 e289791435470ed4fc4c32b8eaf0de3779c89cf1 Makefile.PL
+SHA1 f8ffa91de5562ab22eb45789ac849139d5bc9138 PLUGIN
+SHA1 a559b6b2b208c334f7df8ddfd3428e90526248af README
+SHA1 c058fb5734dc76ad9088b06348d3d7e42d6d1f40 images/archive.gif
+SHA1 e48c105cfb04c0f6ebbe85a55d8749822e40b364 images/archive.png
+SHA1 ea80164a8b9b1991b024bf6ec0c13cfe299acdbc images/cash_sq.gif
+SHA1 b7a970116385caabe13073c36bcd4096e5313b4f images/elix.png
+SHA1 fa8debb685adc209c48e1d1845639ace27730bbf images/folder.gif
+SHA1 fa8debb685adc209c48e1d1845639ace27730bbf images/icon_folder.gif
+SHA1 516611014c1018d65b0b7188b77d216a7be44238 inc/ExtUtils/AutoInstall.pm
+SHA1 8ce7e929153133eb824fa71678a28952dc251848 inc/Module/Install.pm
+SHA1 bd83e494be8be5c67bf8b21de76acf3d9bd8c6b0 inc/Module/Install/AutoInstall.pm
+SHA1 b9972b7e2eb9e0f26e6aa1c450736d04d346cc9b inc/Module/Install/Base.pm
+SHA1 666180aab448c383124cc6f5d242b59cded950bc inc/Module/Install/Include.pm
+SHA1 eff0614c9c10b5965b1c8c6f81ba4b222a30bb13 inc/Module/Install/Makefile.pm
+SHA1 1b2d48254c3b45ee60ff18e2084c980d2ace01dc inc/Module/Install/Metadata.pm
+SHA1 ab45068dc0f749d438705201e38d7901df0c824b inc/Module/Install/WriteAll.pm
+SHA1 59a48a5e29e5a2eafdeeff5a598bd86f2d579a6b lib/Slash/OurNet.pm
+SHA1 8a466836c47f4463aacd98097219299fcd33c852 lib/Slash/OurNet/Standalone.pm
+SHA1 b614c7ff2bb92fa027aacf1ea8cdeb8784b2bd93 ournet.conf
+SHA1 352df8f649ccdb1d7c45f948d2848387f8d60677 ournet.pl
 SHA1 dc4570004234291023939c9d115a1a2df1c9f89a po/en.po
-SHA1 ea313562206c2110a9d311c26f6e451c36013d20 po/zh_tw.po
-SHA1 7d70c10c2f3e0d24d226ab997262ec0e56b25b01 t/use.t
-SHA1 1bea8f12b12dfa2759feeeefbc43a7be6ae1cc63 templates/article;ournet;default
-SHA1 8e42fb9e6cff38c166698e9ebf8ec30a58393193 templates/board;ournet;default
-SHA1 4ed2ea6d5b735214c535a6f8f30f7252933aa2ff templates/data;ournet;default
-SHA1 f7750916fdf7ef8dac3c82f65838ded867e74f70 templates/footer;ournet;default
-SHA1 c35c441a22a2d102cc98922fef7708fd2b33a175 templates/group;ournet;default
-SHA1 3cb715ec4a1b6eaf104e40329ee61769a464885d templates/header;ournet;default
-SHA1 d24a78db553455386cd8c17a9f0aa32e3695ad9b templates/main;ournet;default
-SHA1 0df640841bca54afc29333ca6da039403489241e templates/navigation;ournet;default
+SHA1 2447b8db5796ed6cf6dcb57a6d4644150b5c6104 po/zh_cn.po
+SHA1 dd880f93f59f7227a1c6567b486b45634d6d4597 po/zh_tw.po
+SHA1 3f3f9f73429978a10b8b773cefa920876a5580e3 t/use.t
+SHA1 1bea8f12b12dfa2759feeeefbc43a7be6ae1cc63 templates/elixus/article;ournet;default
+SHA1 2fb510c312a8ed693622272b318009fa25ca2f72 templates/elixus/board;ournet;default
+SHA1 4ed2ea6d5b735214c535a6f8f30f7252933aa2ff templates/elixus/data;ournet;default
+SHA1 f7750916fdf7ef8dac3c82f65838ded867e74f70 templates/elixus/footer;ournet;default
+SHA1 773bddb71382733ed2b80aabb887035c7840a2ef templates/elixus/group;ournet;default
+SHA1 b75efd5e7bf674b5450910faa62ce697543443e6 templates/elixus/header;ournet;default
+SHA1 d24a78db553455386cd8c17a9f0aa32e3695ad9b templates/elixus/main;ournet;default
+SHA1 e4ef547bfff81fb379670bf7c4c6cc27f34e415f templates/elixus/navigation;ournet;default
+SHA1 18843b6df9388667d2dc6c23ca6fef18dd8e05f5 templates/music543/article;ournet;default
+SHA1 f635f51442abf999bc720f185655ca388afe6a56 templates/music543/board;ournet;default
+SHA1 4ed2ea6d5b735214c535a6f8f30f7252933aa2ff templates/music543/data;ournet;default
+SHA1 41d55c491b7be136aceab1560ff7a0a51df6a7c5 templates/music543/footer;ournet;default
+SHA1 d0c158ad3a9977283f0d6d6695ab00efb7b2d49e templates/music543/group;ournet;default
+SHA1 aebfe581e54e5a9a3cd39bbaf2f3abba5d380df3 templates/music543/header;ournet;default
+SHA1 41a4f1e2c2c77e969f2aad24c2f57aaf2048ed57 templates/music543/main;ournet;default
+SHA1 4632b803df156bd153e1da617b521cf70390110c templates/music543/navigation;ournet;default
+SHA1 5e7ad5f64435cece3b8e183313d5104750e0710e trapped.pl
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.0.7 (FreeBSD)
+Version: GnuPG v1.2.3 (FreeBSD)
 
-iD8DBQE9WiJStLPdNzw1AaARAuHzAJ42gHl5bbDrEIM1y8Inxi1XT2dW7QCeP9V2
-hws6+7UEN/noPzdGDKxhuLM=
-=JC2g
+iD8DBQFAQxHxtLPdNzw1AaARAnRqAJ9wHcmvexbPsgh5DcDC2u4mx5yXIQCcCxrt
+9uDRx2d8BXWtjFpe3nkDDMI=
+=8+OS
 -----END PGP SIGNATURE-----

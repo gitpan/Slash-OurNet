@@ -1,50 +1,43 @@
 #!/usr/local/bin/perl
-# $File: //depot/metalist/src/plugins/OurNet/ournet.pl $ $Author: clkao $
-# $Revision: #4 $ $Change: 581 $ $DateTime: 2002/08/05 09:49:58 $
+# $File: //depot/metalist/src/plugins/OurNet/ournet.pl $ $Author: autrijus $
+# $Revision: #15 $ $Change: 3990 $ $DateTime: 2003/01/28 20:09:14 $
 
 use strict;
 use warnings;
-use File::Basename;
-
-our (%ALLBBS);
-
-BEGIN {
-    push @INC, './lib' ;
-    no strict 'refs';
-    *{'Slash::OurNet::ALLBBS'} = \%ALLBBS;
-};
-
 no warnings 'redefine';
 
-our ($Language, $FullScreen, $AllBoards, %StandaloneVars,
+use File::Spec;
+use File::Basename;
+use constant PATH  => dirname(File::Spec->rel2abs(__FILE__));
+use constant SLASH => $ENV{SLASH_USER};
+
+use lib PATH . '/lib';
+
+use Slash::OurNet;
+
+our ($LangHandle, $Language, $FullScreen, $AllBoards, %StandaloneVars,
      $TopClass, $TopArticles, $NewId, $MailBox, $Customize, $BugReport,
-     $MainMenu, $Organization, @Connection, $RootDisplay, $DefaultUser,
-     $DefaultNick, $Login, $Auth_Local, $Strip_ANSI);
+     $Organization, @Connection, $RootDisplay, $DefaultUser, $TrappedExcept,
+     $DefaultNick, $Login, $Auth_Local, $Strip_ANSI, $bbs);
 
-(my $pathname = $0) =~ s/.\w+$/.conf/; do $pathname;
+sub loc { goto &Slash::OurNet::loc }
+BEGIN { do(PATH . '/ournet.conf'); die $@ if $@ }
 
-our $bbs;
-our %Vars;
+use if $TrappedExcept, 'PerlIO::via::trap';
+PerlIO::via::trap->import(qw(open mkdir)) if $TrappedExcept;
 
-local $| = 1;
+use if  SLASH, 'Slash';
+use if  SLASH, 'Slash::DB';
+use if  SLASH, 'Slash::Display';
+use if  SLASH, 'Slash::Utility';
+use if !SLASH, 'Slash::OurNet::Standalone';
+Slash::OurNet::Standalone->import unless SLASH;
 
-if ($ENV{SLASH_USER}) { eval << '.';
-    use Slash;
-    use Slash::DB;
-    use Slash::Display;
-    use Slash::Utility;
-    use Slash::OurNet;
-.
-    $Vars{slash} = 1;
-} else { eval << '.';
-    use Slash::OurNet;
-    Slash::OurNet::Standalone->import();
-.
-    $Vars{slash} = 0;
-    %Vars = (%Vars, %StandaloneVars);
-}
+our %Vars = ( loc => \&loc, slash => (SLASH ? 1 : 0), %StandaloneVars );
 
-die $@ if $@;
+# }}}
+
+=head2 MAPPINGS
 
 # http://localhost/ournet/				=> op=default
 # http://localhost/ournet/Group/			=> op=group
@@ -53,9 +46,7 @@ die $@ if $@;
 # http://localhost/ournet/Group/Board/archives/NumOrStr?edit  => op=board
 # http://localhost/ournet/Group/Board/archives/NumOrStr?reply => op=board
 
-sub loc {
-    goto \&Slash::OurNet::loc;
-}
+=cut
 
 sub main {
     my %ops = (
@@ -83,8 +74,10 @@ sub main {
     my $form = getCurrentForm();
     my $constants = getCurrentStatic();
 
+    print "Content-Type: text/html; charset=utf-8\n\n";
+
     my $rootdir = exists $ENV{SCRIPT_NAME} ? $ENV{SCRIPT_NAME} : $0;
-#    $rootdir =~ s/[\\\/][^\\\/]+$//;
+    $rootdir =~ s/[\\\/][^\\\/]+$//;
     $Vars{rootdir}  = $rootdir;
     $Vars{imagedir} = $rootdir."/images";
 
@@ -135,18 +128,19 @@ sub main {
 
     my $uid = $form->{'uid'};
     my $slashdb = getCurrentDB();
-    my $name = $slashdb->getUser($form->{uid}, 'nickname') 
-	if $form->{uid};
+    my $name = $slashdb->getUser($uid, 'nickname') if $uid;
     $name ||= getCurrentUser('nickname');
     $name ||= $DefaultUser;
 
     # defaults to plaintext on localhost.
-    $bbs = $ALLBBS{$name} ||= Slash::OurNet->new(
+    $bbs = $Slash::OurNet::ALLBBS{$name} ||= Slash::OurNet->new(
 	getCurrentVirtualUser(), (@Connection, $Auth_Local ? ($name, 1, 1) : ())
     );
 
-    my $nick = $slashdb->getUser($form->{uid}, 'fakeemail') 
-	if $form->{uid};
+    # XXX: local auth
+    # $bbs->{bbs} = OurNet::BBS->new('OurNet', $bbs->{bbs}, $name) if $name ne $DefaultUser;
+
+    my $nick = $slashdb->getUser($form->{uid}, 'fakeemail') if $form->{uid};
     $nick ||= getCurrentUser('fakeemail');
     $nick ||= $DefaultNick;
 
@@ -157,6 +151,9 @@ sub main {
 	$op = 'default' unless $safe{$op};
     }
 
+    return $ops{$op}->($form, $bbs, $constants, $name, $nick)
+	if ($ops{$op} == \&displayLogin);
+
     if ($FullScreen) {
 	slashDisplay('header', { 
 	    %Vars,
@@ -165,8 +162,8 @@ sub main {
     }
     else {
 	header("$Organization - $name");
+	titlebar("100%","$Organization - $name");
     }
-    titlebar("100%","$Organization - $name");
 
     slashDisplay('navigation', { 
 	%Vars,
@@ -183,9 +180,7 @@ sub main {
     $ops{$op}->($form, $bbs, $constants, $name, $nick);
 
     if ($FullScreen) {
-	slashDisplay('footer', { 
-	    %Vars,
-	});
+	slashDisplay('footer', { %Vars });
     }
     else {
 	footer();
@@ -195,10 +190,11 @@ sub main {
 sub displayLogin {
     if ($ENV{SLASH_USER}) {
 	# shouldn't be here unless Anonymous Coward is turned off.
-	print loc("You haven't logged in. Please press login in the left side bar.");
+	print CMSG(4, "You haven't logged in. Please press login in the left side bar.");
     }
     else {
-	print "<HTML><HEAD><META HTTP-EQUIV='Refresh' CONTENT='0;url=".($ENV{HTTP_REFERER} || $Vars{rootdir})."'></HEAD><BODY></BODY></HTML>\n\n";
+	# slashDisplay('login', { %Vars });
+	print "<HTML><HEAD><META HTTP-EQUIV='Refresh' CONTENT='0;url=$Vars{rootdir}/'></HEAD><BODY></BODY></HTML>\n\n";
     }
 }
 
@@ -248,7 +244,7 @@ sub displayAllBoards {
 	group	=> $group,
 	boards	=> $bbs->mapBoards($TopClass, grep {$_} map {eval{$brds->{$_}}} $brds->KEYS),
 	display	=> $RootDisplay,
-	message	=> $MainMenu,
+	message	=> loc('Home'),
 	topclass => $TopClass,
     });
 }
@@ -258,8 +254,14 @@ sub displayGroup {
     $group ||= $form->{group};
     $board ||= $form->{board};
 
+    if (!$board) {
+	($group, $board) = ($board, $group);
+	($group, $board) = (split('/', $board))[-2,-1] if index($board, '/') > -1;
+    }
+
     my ($boards, $message) = $bbs->group($group, $board);
-    goto &displayAllBoards unless @{$boards};
+    return unless $boards and @{$boards};
+    # goto &displayAllBoards unless @{$boards};
 
     slashDisplay('group', { 
 	%Vars,
@@ -269,7 +271,7 @@ sub displayGroup {
 	display	=> ($form->{board} || $RootDisplay),
 	message	=> (
 	    ($form->{board} and $form->{board} ne $TopClass) 
-		? $message : $MainMenu,
+		? $message : loc('Home'),
 	),
 	topclass => $TopClass,
     });
@@ -278,9 +280,9 @@ sub displayGroup {
 sub displayBoard {
     my ($form, $bbs, $constants, $name) = @_;
     unless ($bbs->{bbs}{boards}{$form->{board}}) {
-	print loc('No such board.<hr>'), $form->{board};
-	printf(loc(
-	    '<div align="center">[ <a href="%s">Back to main menu</a> ]</div>'
+	print CMSG(5, 'No such board.<hr>'), $form->{board};
+	printf(CMSG(
+	    6, '<div align="center">[ <a href="%s">Back to main menu</a> ]</div>'
 	), $0);
 	return;
     }
@@ -390,6 +392,31 @@ sub displayArticle {
     });
 }
 
+# locate a melix installation by looking at various places
+sub find_bbs {
+    local $@;
+    
+    if ($^O eq 'MSWin32' and eval 'use Win32::TieRegistry; 1') {
+		no warnings 'once';
+        my $Registry = $Win32::TieRegistry::Registry;
+		my $binary_path = (
+			$Registry->{'HKEY_LOCAL_MACHINE\Software\Elixir\melix\\'}->{''} ||
+            $Registry->{'HKEY_LOCAL_MACHINE\Software\Cygnus Solutions\\'.
+                        'Cygwin\mounts v2\/\native'}
+        );
+        
+        unshift(@_, "$binary_path/home/melix") if defined $binary_path;
+    }
+
+    foreach my $path (@_, '.') {
+	return $path if -d $path
+	    and (-e "$path/.BRD" or -e "$path/.USR" or
+		 -e "$path/bin/bbsd" or -e "$path/bin/bbsd.exe");
+    }
+
+    die "cannot find Melix BBS's .BRD file in path: (@_).\n"
+}
+
 sub httpd {
     require HTTP::Daemon;
     require HTTP::Status;
@@ -453,31 +480,6 @@ sub httpd {
 	undef($c);
 	exit unless ($^O eq 'MSWin32');
     }
-}
-
-# locate a melix installation by looking at various places
-sub find_bbs {
-    local $@;
-    
-    if ($^O eq 'MSWin32' and eval 'use Win32::TieRegistry; 1') {
-		no warnings 'once';
-        my $Registry = $Win32::TieRegistry::Registry;
-		my $binary_path = (
-			$Registry->{'HKEY_LOCAL_MACHINE\Software\Elixir\melix\\'}->{''} ||
-            $Registry->{'HKEY_LOCAL_MACHINE\Software\Cygnus Solutions\\'.
-                        'Cygwin\mounts v2\/\native'}
-        );
-        
-        unshift(@_, "$binary_path/home/melix") if defined $binary_path;
-    }
-
-    foreach my $path (@_, '.') {
-	return $path if -d $path
-	    and (-e "$path/.BRD" or -e "$path/.USR" or
-		 -e "$path/bin/bbsd" or -e "$path/bin/bbsd.exe");
-    }
-
-    die "cannot find Melix BBS's .BRD file in path: (@_).\n"
 }
 
 createEnvironment();
