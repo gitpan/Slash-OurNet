@@ -3,7 +3,7 @@
 
 package Slash::OurNet;
 
-our $VERSION = '1.1';
+our $VERSION = '1.2';
 our @ISA = qw/Slash::DB::Utility Slash::DB::MySQL/ if $ENV{SLASH_USER};
 
 use strict;
@@ -14,35 +14,38 @@ use Date::Parse;
 use Date::Format;
 use OurNet::BBS;
 
+use Slash;
+use Slash::DB;
+use Slash::Display;
+use Slash::Utility;
+
 no warnings qw/once redefine/;
 
 $Text::Wrap::columns = 75;
 $OurNet::BBS::Client::NoCache = 1; # avoids bloat
 
 our ($TopClass, $MailBox, $Organization, @Connection, $SecretSigils, 
-     $BoardPrefixLength, $GroupPrefixLength, $Strip_ANSI,
+     $BoardPrefixLength, $GroupPrefixLength, $Strip_ANSI, $Use_RealEmail,
      $Thread_Prev, $Date_Prev, $Thread_Next, $Date_Next);
 
 our %CachedTop;
 
-(my $pathname = $0) =~ s/[^\/]+$//;
-$pathname ||= '.';
-do "$pathname/ournet.conf";
+(my $pathname = $0) =~ s/.pl$/.conf/; do $pathname;
 
 sub new {
-    my ($class, $user) = splice(@_, 0, 2);
+    my ($class, $name) = splice(@_, 0, 2);
     no warnings 'once';
     my $self = {
 	bbs => $cached::BBS{"@_"} ||= OurNet::BBS->new(@_),
-	virtual_user => $user,
+	virtual_user => $name,
     };
 
     return bless($self, $class);
 }
 
 sub article_save {
-    my ($self, $group, $board, $child, $name, $reply, 
-        $title, $body, $state, $user, $nick) = @_;
+    my ($self, $group, $board, $child, $artid, $reply, 
+        $title, $body, $state, $name, $nick) = @_;
 
     $child ||= 'articles';
     my $artgrp = $self->{bbs}{boards}{$board};
@@ -50,14 +53,23 @@ sub article_save {
     # honor 75-column tradition of legacy BBS systems
     $body = wrap('','', $body) if length($body) > 75;
 
+    my $offset = sprintf("%+0.4d", getCurrentUser('off_set') / 36);
+    $offset =~ s/([1-9][0-9]|[0-9][1-9])$/$1 * 0.6/e;
+
+    if ($Use_RealEmail) {
+	$name = getCurrentUser('realemail');
+	$nick = getCurrentUser('nickname');
+    }
+
     # we could ignore the $reply until a Reply-To header is supported
     my $article = {
 	header	=> {
-	    From    => "$user ($nick)",
+	    From    => "$name ($nick)",
 	    Subject => $title || '',
 	    Board   => $board,
-	    # XXX GMT error! oh my god they killed kenny!
-	    Date    => (scalar localtime(time+28800)),
+	    Date    => timeCalc(
+		scalar localtime, "%a %b %e %H:%M:%S $offset %Y"
+	    ),
 	},
 	body	=> $body || '',
     };
@@ -67,18 +79,18 @@ sub article_save {
     $error .= 'Please enter a subject.<hr>' unless (length($article->{header}));
     $error = '&nbsp;' unless $state;
 
-    $artgrp->{articles}{$name || ''} = $article unless $error;
+    $artgrp->{articles}{$artid || ''} = $article unless $error;
 
     return ($article, $error);
 }
 
 sub article {
-    my ($self, $group, $board, $child, $name, $reply) = @_;
+    my ($self, $group, $board, $child, $artid, $reply) = @_;
     my (@related, $artgrp, $is_reply);
 
     # put $reply to $name and set flag for further processing
-    $is_reply++ if !defined($name) and defined($name = $reply);
-    return unless defined $name; # happens when a new article's made
+    $is_reply++ if !defined($artid) and defined($artid = $reply);
+    return unless defined $artid; # happens when a new article's made
 
     $child ||= 'articles';
     $artgrp = $self->{bbs}{($child eq 'mailbox') ? 'users' : 'boards'}{$board};
@@ -87,7 +99,7 @@ sub article {
 	$artgrp = $artgrp->{$chunk};
     }
 
-    my $article	= $artgrp->{$name};
+    my $article	= $artgrp->{$artid};
 
     my $related = $is_reply ? [] :  $self->related_articles(
 	[ group => $group, board => $board, child => $child ],
@@ -95,7 +107,7 @@ sub article {
     ); # do not calculate related article during reply
 
     return ($self->mapArticle(
-	$group, $board, $child, $name, $article, $is_reply
+	$group, $board, $child, $artid, $article, $is_reply
     ), $related);
 }
 
@@ -110,6 +122,7 @@ sub related_articles {
     $title = "Re: $title" unless substr($title, 0, 4) eq 'Re: ';
 
     my %cache;
+
     # grepping for thread_prev
     if ($Thread_Prev) { foreach my $i (reverse(($recno - 5) .. ($recno - 1))) {
 	next if $i < 0;
@@ -302,7 +315,7 @@ sub mapArticles {
     local $_; 
     return [ map {
 	my $recno = shift(@{$range});
-	my ($type, $title, $date, $author, $board, $name);
+	my ($type, $title, $date, $author, $board, $artid);
 
 	if ($_) {
 	    $type   = ($_->REF =~ /Group/) ? 'group' : 'article'; 
@@ -311,7 +324,7 @@ sub mapArticles {
 	    $date   = time2str('%m/%d', $_->mtime);
 	    $author = $_->{author};
 	    $board  = $board || $_->board;
-	    $name   = $_->name;
+	    $artid  = $_->name;
 	}
 	else { # deleted article
 	    $type   = 'deleted';
@@ -329,7 +342,7 @@ sub mapArticles {
 	    date	=> $date,
 	    author	=> $author,
 	    board	=> $board,
-	    name	=> $name,
+	    name	=> $artid,
 	    recno 	=> $recno,
 	    articles_count	=> $type eq 'group' ? $#{$_} : 1,
 	}
@@ -337,7 +350,7 @@ sub mapArticles {
 }
 
 sub mapArticle {
-    my ($self, $group, $board, $child, $name, $article, $is_reply) = @_;
+    my ($self, $group, $board, $child, $artid, $article, $is_reply) = @_;
     my $header = { %{$article->{header}} };
     my $title = $header->{Subject};
     $header->{Subject} =~ s/\x1b\[[\d\;]*m//g; 
@@ -349,7 +362,7 @@ sub mapArticle {
 	board	=> $board,
 	group	=> $group,
 	child	=> $child,
-	name 	=> $name,
+	name 	=> $artid,
     };
 }
 
@@ -434,542 +447,30 @@ sub txt2html {
 	$body =~ s/: \n+/\n/g;
 	$body = "*) $article->{header}{From} wrote:\n: $body";
     }
-    else {
-        # XXX handle ANSI codes
-        $body =~ s/\x1b\[.*?[mJH]//g if $Strip_ANSI;
-        $body = ansi2html($body);
+    elsif ($Strip_ANSI) {
+	require HTML::FromText;
 
-	# $body = text2html(
-	#     $body,
-	#     metachars => 1,  urls      => 1,
-	#     email     => 1,  underline => 1,
-	#     lines     => 1,  spaces    => 1,
-	# );
+        $body =~ s/\x1b\[.*?[mJH]//g;
+	$body = HTML::FromText::text2html(
+	    $body,
+	    metachars => 1,  urls      => 1,
+	    email     => 1,  underline => 1,
+	    lines     => 1,  spaces    => 1,
+	);
+
+	$body = << ".";
+<font face="fixedsys, lucida console, terminal, vga, monospace" color="#e9e9e9">
+$body
+</font>
+.
+    }
+    else {
+	require HTML::FromANSI;
+        $body = HTML::FromANSI::ansi2html($body);
     }
 
     return $body;
 }
-
-##########################################################################
-# perl script to convert ANSI screens to HTML pages
-# copyright 2001, Stephen Hurd (shurd@sk.sympatico.ca)
-# patched by Autrijus Tang (autrijus@autrijus.org)
-#
-# usage: convert.pl infile outfile
-# Does not work well with movement codes!
-#
-
-no utf8;
-use strict;
-
-my ($text, $strpos, $new_text, $line_pos, $char, $ansi_code, $html_style, $html_color, $code_length);
-my ($attribute, $attributes, @attributes, $this_line);
-my ($attr, $foreground, $background, $blink, $old_style, $old_html_color, %ascii);
-my ($spaces, $nbspaces, $backspaces);
-
-my %styles;
-my $STYLE;
-
-sub init {
-	return if $STYLE;
-	$attr = '0';
-$foreground='37';
-$background='40';
-$blink='';
-$old_style='';
-$old_html_color='';
-%ascii = map { $_ => chr($_) } (127..255);
-
-$spaces=' ' x 92;
-$nbspaces=$spaces.$spaces;
-$backspaces="\x08" x 200;
-
-$STYLE = << '.';
-a                               {text-decoration: none;}
-a:visited                       {text-decoration: none;}
-a:link                          {text-decoration: none;}
-.a-0-30-40                      {color: black; background-color: black;}
-.a-0-31-40                      {color: #aa0000; background-color: black;}
-.a-0-32-40                      {color: #00aa00; background-color: black;}
-.a-0-33-40                      {color: #aaaa00; background-color: black;}
-.a-0-34-40                      {color: #0000aa; background-color: black;}
-.a-0-35-40                      {color: #aa00aa; background-color: black;}
-.a-0-36-40                      {color: #00aaaa; background-color: black;}
-.a-0-37-40                      {color: #aaaaaa; background-color: black;}
-.a-1-30-40                      {color: #444444; background-color: black;}
-.a-1-31-40                      {color: #ff4444; background-color: black;}
-.a-1-32-40                      {color: #44ff44; background-color: black;}
-.a-1-33-40                      {color: #ffff44; background-color: black;}
-.a-1-34-40                      {color: #4444ff; background-color: black;}
-.a-1-35-40                      {color: #ff44ff; background-color: black;}
-.a-1-36-40                      {color: #44ffff; background-color: black;}
-.a-1-37-40                      {color: white; background-color: black;}
-.a-0-30-41                      {color: black; background-color: #aa0000;}
-.a-0-31-41                      {color: #aa0000; background-color: #aa0000;}
-.a-0-32-41                      {color: #00aa00; background-color: #aa0000;}
-.a-0-33-41                      {color: #aaaa00; background-color: #aa0000;}
-.a-0-34-41                      {color: #0000aa; background-color: #aa0000;}
-.a-0-35-41                      {color: #aa00aa; background-color: #aa0000;}
-.a-0-36-41                      {color: #00aaaa; background-color: #aa0000;}
-.a-0-37-41                      {color: #aaaaaa; background-color: #aa0000;}
-.a-1-30-41                      {color: #444444; background-color: #aa0000;}
-.a-1-31-41                      {color: #ff4444; background-color: #aa0000;}
-.a-1-32-41                      {color: #44ff44; background-color: #aa0000;}
-.a-1-33-41                      {color: #ffff44; background-color: #aa0000;}
-.a-1-34-41                      {color: #4444ff; background-color: #aa0000;}
-.a-1-35-41                      {color: #ff44ff; background-color: #aa0000;}
-.a-1-36-41                      {color: #44ffff; background-color: #aa0000;}
-.a-1-37-41                      {color: white; background-color: #aa0000;}
-.a-0-30-42                      {color: black; background-color: #00aa00;}
-.a-0-31-42                      {color: #aa0000; background-color: #00aa00;}
-.a-0-32-42                      {color: #00aa00; background-color: #00aa00;}
-.a-0-33-42                      {color: #aaaa00; background-color: #00aa00;}
-.a-0-34-42                      {color: #0000aa; background-color: #00aa00;}
-.a-0-35-42                      {color: #aa00aa; background-color: #00aa00;}
-.a-0-36-42                      {color: #00aaaa; background-color: #00aa00;}
-.a-0-37-42                      {color: #aaaaaa; background-color: #00aa00;}
-.a-1-30-42                      {color: #444444; background-color: #00aa00;}
-.a-1-31-42                      {color: #ff4444; background-color: #00aa00;}
-.a-1-32-42                      {color: #44ff44; background-color: #00aa00;}
-.a-1-33-42                      {color: #ffff44; background-color: #00aa00;}
-.a-1-34-42                      {color: #4444ff; background-color: #00aa00;}
-.a-1-35-42                      {color: #ff44ff; background-color: #00aa00;}
-.a-1-36-42                      {color: #44ffff; background-color: #00aa00;}
-.a-1-37-42                      {color: white; background-color: #00aa00;}
-.a-0-30-43                      {color: black; background-color: #aaaa00;}
-.a-0-31-43                      {color: #aa0000; background-color: #aaaa00;}
-.a-0-32-43                      {color: #00aa00; background-color: #aaaa00;}
-.a-0-33-43                      {color: #aaaa00; background-color: #aaaa00;}
-.a-0-34-43                      {color: #0000aa; background-color: #aaaa00;}
-.a-0-35-43                      {color: #aa00aa; background-color: #aaaa00;}
-.a-0-36-43                      {color: #00aaaa; background-color: #aaaa00;}
-.a-0-37-43                      {color: #aaaaaa; background-color: #aaaa00;}
-.a-1-30-43                      {color: #444444; background-color: #aaaa00;}
-.a-1-31-43                      {color: #ff4444; background-color: #aaaa00;}
-.a-1-32-43                      {color: #44ff44; background-color: #aaaa00;}
-.a-1-33-43                      {color: #ffff44; background-color: #aaaa00;}
-.a-1-34-43                      {color: #4444ff; background-color: #aaaa00;}
-.a-1-35-43                      {color: #ff44ff; background-color: #aaaa00;}
-.a-1-36-43                      {color: #44ffff; background-color: #aaaa00;}
-.a-1-37-43                      {color: white; background-color: #aaaa00;}
-.a-0-30-44                      {color: black; background-color: #0000aa;}
-.a-0-31-44                      {color: #aa0000; background-color: #0000aa;}
-.a-0-32-44                      {color: #00aa00; background-color: #0000aa;}
-.a-0-33-44                      {color: #aaaa00; background-color: #0000aa;}
-.a-0-34-44                      {color: #0000aa; background-color: #0000aa;}
-.a-0-35-44                      {color: #aa00aa; background-color: #0000aa;}
-.a-0-36-44                      {color: #00aaaa; background-color: #0000aa;}
-.a-0-37-44                      {color: #aaaaaa; background-color: #0000aa;}
-.a-1-30-44                      {color: #444444; background-color: #0000aa;}
-.a-1-31-44                      {color: #ff4444; background-color: #0000aa;}
-.a-1-32-44                      {color: #44ff44; background-color: #0000aa;}
-.a-1-33-44                      {color: #ffff44; background-color: #0000aa;}
-.a-1-34-44                      {color: #4444ff; background-color: #0000aa;}
-.a-1-35-44                      {color: #ff44ff; background-color: #0000aa;}
-.a-1-36-44                      {color: #44ffff; background-color: #0000aa;}
-.a-1-37-44                      {color: white; background-color: #0000aa;}
-.a-0-30-45                      {color: black; background-color: #aa00aa;}
-.a-0-31-45                      {color: #aa0000; background-color: #aa00aa;}
-.a-0-32-45                      {color: #00aa00; background-color: #aa00aa;}
-.a-0-33-45                      {color: #aaaa00; background-color: #aa00aa;}
-.a-0-34-45                      {color: #0000aa; background-color: #aa00aa;}
-.a-0-35-45                      {color: #aa00aa; background-color: #aa00aa;}
-.a-0-36-45                      {color: #00aaaa; background-color: #aa00aa;}
-.a-0-37-45                      {color: #aaaaaa; background-color: #aa00aa;}
-.a-1-30-45                      {color: #444444; background-color: #aa00aa;}
-.a-1-31-45                      {color: #ff4444; background-color: #aa00aa;}
-.a-1-32-45                      {color: #44ff44; background-color: #aa00aa;}
-.a-1-33-45                      {color: #ffff44; background-color: #aa00aa;}
-.a-1-34-45                      {color: #4444ff; background-color: #aa00aa;}
-.a-1-35-45                      {color: #ff44ff; background-color: #aa00aa;}
-.a-1-36-45                      {color: #44ffff; background-color: #aa00aa;}
-.a-1-37-45                      {color: white; background-color: #aa00aa;}
-.a-0-30-46                      {color: black; background-color: #44ffff;}
-.a-0-31-46                      {color: #aa0000; background-color: #44ffff;}
-.a-0-32-46                      {color: #00aa00; background-color: #44ffff;}
-.a-0-33-46                      {color: #aaaa00; background-color: #44ffff;}
-.a-0-34-46                      {color: #0000aa; background-color: #44ffff;}
-.a-0-35-46                      {color: #aa00aa; background-color: #44ffff;}
-.a-0-36-46                      {color: #00aaaa; background-color: #44ffff;}
-.a-0-37-46                      {color: #aaaaaa; background-color: #44ffff;}
-.a-1-30-46                      {color: #444444; background-color: #44ffff;}
-.a-1-31-46                      {color: #ff4444; background-color: #44ffff;}
-.a-1-32-46                      {color: #44ff44; background-color: #44ffff;}
-.a-1-33-46                      {color: #ffff44; background-color: #44ffff;}
-.a-1-34-46                      {color: #4444ff; background-color: #44ffff;}
-.a-1-35-46                      {color: #ff44ff; background-color: #44ffff;}
-.a-1-36-46                      {color: #44ffff; background-color: #44ffff;}
-.a-1-37-46                      {color: white; background-color: #44ffff;}
-.a-0-30-47                      {color: black; background-color: #aaaaaa;}
-.a-0-31-47                      {color: #aa0000; background-color: #aaaaaa;}
-.a-0-32-47                      {color: #00aa00; background-color: #aaaaaa;}
-.a-0-33-47                      {color: #aaaa00; background-color: #aaaaaa;}
-.a-0-34-47                      {color: #0000aa; background-color: #aaaaaa;}
-.a-0-35-47                      {color: #aa00aa; background-color: #aaaaaa;}
-.a-0-36-47                      {color: #00aaaa; background-color: #aaaaaa;}
-.a-0-37-47                      {color: #aaaaaa; background-color: #aaaaaa;}
-.a-1-30-47                      {color: #444444; background-color: #aaaaaa;}
-.a-1-31-47                      {color: #ff4444; background-color: #aaaaaa;}
-.a-1-32-47                      {color: #44ff44; background-color: #aaaaaa;}
-.a-1-33-47                      {color: #ffff44; background-color: #aaaaaa;}
-.a-1-34-47                      {color: #4444ff; background-color: #aaaaaa;}
-.a-1-35-47                      {color: #ff44ff; background-color: #aaaaaa;}
-.a-1-36-47                      {color: #44ffff; background-color: #aaaaaa;}
-.a-1-37-47                      {color: white; background-color: #aaaaaa;}
-.a5-0-30-40                     {text-decoration: blink; color: black; background-color: black;}
-.a5-0-31-40                     {text-decoration: blink; color: #aa0000; background-color: black;}
-.a5-0-32-40                     {text-decoration: blink; color: #00aa00; background-color: black;}
-.a5-0-33-40                     {text-decoration: blink; color: #aaaa00; background-color: black;}
-.a5-0-34-40                     {text-decoration: blink; color: #0000aa; background-color: black;}
-.a5-0-35-40                     {text-decoration: blink; color: #aa00aa; background-color: black;}
-.a5-0-36-40                     {text-decoration: blink; color: #00aaaa; background-color: black;}
-.a5-0-37-40                     {text-decoration: blink; color: #aaaaaa; background-color: black;}
-.a5-1-30-40                     {text-decoration: blink; color: #444444; background-color: black;}
-.a5-1-31-40                     {text-decoration: blink; color: #ff4444; background-color: black;}
-.a5-1-32-40                     {text-decoration: blink; color: #44ff44; background-color: black;}
-.a5-1-33-40                     {text-decoration: blink; color: #ffff44; background-color: black;}
-.a5-1-34-40                     {text-decoration: blink; color: #4444ff; background-color: black;}
-.a5-1-35-40                     {text-decoration: blink; color: #ff44ff; background-color: black;}
-.a5-1-36-40                     {text-decoration: blink; color: #44ffff; background-color: black;}
-.a5-1-37-40                     {text-decoration: blink; color: white; background-color: black;}
-.a5-0-30-41                     {text-decoration: blink; color: black; background-color: #aa0000;}
-.a5-0-31-41                     {text-decoration: blink; color: #aa0000; background-color: #aa0000;}
-.a5-0-32-41                     {text-decoration: blink; color: #00aa00; background-color: #aa0000;}
-.a5-0-33-41                     {text-decoration: blink; color: #aaaa00; background-color: #aa0000;}
-.a5-0-34-41                     {text-decoration: blink; color: #0000aa; background-color: #aa0000;}
-.a5-0-35-41                     {text-decoration: blink; color: #aa00aa; background-color: #aa0000;}
-.a5-0-36-41                     {text-decoration: blink; color: #00aaaa; background-color: #aa0000;}
-.a5-0-37-41                     {text-decoration: blink; color: #aaaaaa; background-color: #aa0000;}
-.a5-1-30-41                     {text-decoration: blink; color: #444444; background-color: #aa0000;}
-.a5-1-31-41                     {text-decoration: blink; color: #ff4444; background-color: #aa0000;}
-.a5-1-32-41                     {text-decoration: blink; color: #44ff44; background-color: #aa0000;}
-.a5-1-33-41                     {text-decoration: blink; color: #ffff44; background-color: #aa0000;}
-.a5-1-34-41                     {text-decoration: blink; color: #4444ff; background-color: #aa0000;}
-.a5-1-35-41                     {text-decoration: blink; color: #ff44ff; background-color: #aa0000;}
-.a5-1-36-41                     {text-decoration: blink; color: #44ffff; background-color: #aa0000;}
-.a5-1-37-41                     {text-decoration: blink; color: white; background-color: #aa0000;}
-.a5-0-30-42                     {text-decoration: blink; color: black; background-color: #00aa00;}
-.a5-0-31-42                     {text-decoration: blink; color: #aa0000; background-color: #00aa00;}
-.a5-0-32-42                     {text-decoration: blink; color: #00aa00; background-color: #00aa00;}
-.a5-0-33-42                     {text-decoration: blink; color: #aaaa00; background-color: #00aa00;}
-.a5-0-34-42                     {text-decoration: blink; color: #0000aa; background-color: #00aa00;}
-.a5-0-35-42                     {text-decoration: blink; color: #aa00aa; background-color: #00aa00;}
-.a5-0-36-42                     {text-decoration: blink; color: #00aaaa; background-color: #00aa00;}
-.a5-0-37-42                     {text-decoration: blink; color: #aaaaaa; background-color: #00aa00;}
-.a5-1-30-42                     {text-decoration: blink; color: #444444; background-color: #00aa00;}
-.a5-1-31-42                     {text-decoration: blink; color: #ff4444; background-color: #00aa00;}
-.a5-1-32-42                     {text-decoration: blink; color: #44ff44; background-color: #00aa00;}
-.a5-1-33-42                     {text-decoration: blink; color: #ffff44; background-color: #00aa00;}
-.a5-1-34-42                     {text-decoration: blink; color: #4444ff; background-color: #00aa00;}
-.a5-1-35-42                     {text-decoration: blink; color: #ff44ff; background-color: #00aa00;}
-.a5-1-36-42                     {text-decoration: blink; color: #44ffff; background-color: #00aa00;}
-.a5-1-37-42                     {text-decoration: blink; color: white; background-color: #00aa00;}
-.a5-0-30-43                     {text-decoration: blink; color: black; background-color: #aaaa00;}
-.a5-0-31-43                     {text-decoration: blink; color: #aa0000; background-color: #aaaa00;}
-.a5-0-32-43                     {text-decoration: blink; color: #00aa00; background-color: #aaaa00;}
-.a5-0-33-43                     {text-decoration: blink; color: #aaaa00; background-color: #aaaa00;}
-.a5-0-34-43                     {text-decoration: blink; color: #0000aa; background-color: #aaaa00;}
-.a5-0-35-43                     {text-decoration: blink; color: #aa00aa; background-color: #aaaa00;}
-.a5-0-36-43                     {text-decoration: blink; color: #00aaaa; background-color: #aaaa00;}
-.a5-0-37-43                     {text-decoration: blink; color: #aaaaaa; background-color: #aaaa00;}
-.a5-1-30-43                     {text-decoration: blink; color: #444444; background-color: #aaaa00;}
-.a5-1-31-43                     {text-decoration: blink; color: #ff4444; background-color: #aaaa00;}
-.a5-1-32-43                     {text-decoration: blink; color: #44ff44; background-color: #aaaa00;}
-.a5-1-33-43                     {text-decoration: blink; color: #ffff44; background-color: #aaaa00;}
-.a5-1-34-43                     {text-decoration: blink; color: #4444ff; background-color: #aaaa00;}
-.a5-1-35-43                     {text-decoration: blink; color: #ff44ff; background-color: #aaaa00;}
-.a5-1-36-43                     {text-decoration: blink; color: #44ffff; background-color: #aaaa00;}
-.a5-1-37-43                     {text-decoration: blink; color: white; background-color: #aaaa00;}
-.a5-0-30-44                     {text-decoration: blink; color: black; background-color: #0000aa;}
-.a5-0-31-44                     {text-decoration: blink; color: #aa0000; background-color: #0000aa;}
-.a5-0-32-44                     {text-decoration: blink; color: #00aa00; background-color: #0000aa;}
-.a5-0-33-44                     {text-decoration: blink; color: #aaaa00; background-color: #0000aa;}
-.a5-0-34-44                     {text-decoration: blink; color: #0000aa; background-color: #0000aa;}
-.a5-0-35-44                     {text-decoration: blink; color: #aa00aa; background-color: #0000aa;}
-.a5-0-36-44                     {text-decoration: blink; color: #00aaaa; background-color: #0000aa;}
-.a5-0-37-44                     {text-decoration: blink; color: #aaaaaa; background-color: #0000aa;}
-.a5-1-30-44                     {text-decoration: blink; color: #444444; background-color: #0000aa;}
-.a5-1-31-44                     {text-decoration: blink; color: #ff4444; background-color: #0000aa;}
-.a5-1-32-44                     {text-decoration: blink; color: #44ff44; background-color: #0000aa;}
-.a5-1-33-44                     {text-decoration: blink; color: #ffff44; background-color: #0000aa;}
-.a5-1-34-44                     {text-decoration: blink; color: #4444ff; background-color: #0000aa;}
-.a5-1-35-44                     {text-decoration: blink; color: #ff44ff; background-color: #0000aa;}
-.a5-1-36-44                     {text-decoration: blink; color: #44ffff; background-color: #0000aa;}
-.a5-1-37-44                     {text-decoration: blink; color: white; background-color: #0000aa;}
-.a5-0-30-45                     {text-decoration: blink; color: black; background-color: #aa00aa;}
-.a5-0-31-45                     {text-decoration: blink; color: #aa0000; background-color: #aa00aa;}
-.a5-0-32-45                     {text-decoration: blink; color: #00aa00; background-color: #aa00aa;}
-.a5-0-33-45                     {text-decoration: blink; color: #aaaa00; background-color: #aa00aa;}
-.a5-0-34-45                     {text-decoration: blink; color: #0000aa; background-color: #aa00aa;}
-.a5-0-35-45                     {text-decoration: blink; color: #aa00aa; background-color: #aa00aa;}
-.a5-0-36-45                     {text-decoration: blink; color: #00aaaa; background-color: #aa00aa;}
-.a5-0-37-45                     {text-decoration: blink; color: #aaaaaa; background-color: #aa00aa;}
-.a5-1-30-45                     {text-decoration: blink; color: #444444; background-color: #aa00aa;}
-.a5-1-31-45                     {text-decoration: blink; color: #ff4444; background-color: #aa00aa;}
-.a5-1-32-45                     {text-decoration: blink; color: #44ff44; background-color: #aa00aa;}
-.a5-1-33-45                     {text-decoration: blink; color: #ffff44; background-color: #aa00aa;}
-.a5-1-34-45                     {text-decoration: blink; color: #4444ff; background-color: #aa00aa;}
-.a5-1-35-45                     {text-decoration: blink; color: #ff44ff; background-color: #aa00aa;}
-.a5-1-36-45                     {text-decoration: blink; color: #44ffff; background-color: #aa00aa;}
-.a5-1-37-45                     {text-decoration: blink; color: white; background-color: #aa00aa;}
-.a5-0-30-46                     {text-decoration: blink; color: black; background-color: #44ffff;}
-.a5-0-31-46                     {text-decoration: blink; color: #aa0000; background-color: #44ffff;}
-.a5-0-32-46                     {text-decoration: blink; color: #00aa00; background-color: #44ffff;}
-.a5-0-33-46                     {text-decoration: blink; color: #aaaa00; background-color: #44ffff;}
-.a5-0-34-46                     {text-decoration: blink; color: #0000aa; background-color: #44ffff;}
-.a5-0-35-46                     {text-decoration: blink; color: #aa00aa; background-color: #44ffff;}
-.a5-0-36-46                     {text-decoration: blink; color: #00aaaa; background-color: #44ffff;}
-.a5-0-37-46                     {text-decoration: blink; color: #aaaaaa; background-color: #44ffff;}
-.a5-1-30-46                     {text-decoration: blink; color: #444444; background-color: #44ffff;}
-.a5-1-31-46                     {text-decoration: blink; color: #ff4444; background-color: #44ffff;}
-.a5-1-32-46                     {text-decoration: blink; color: #44ff44; background-color: #44ffff;}
-.a5-1-33-46                     {text-decoration: blink; color: #ffff44; background-color: #44ffff;}
-.a5-1-34-46                     {text-decoration: blink; color: #4444ff; background-color: #44ffff;}
-.a5-1-35-46                     {text-decoration: blink; color: #ff44ff; background-color: #44ffff;}
-.a5-1-36-46                     {text-decoration: blink; color: #44ffff; background-color: #44ffff;}
-.a5-1-37-46                     {text-decoration: blink; color: white; background-color: #44ffff;}
-.a5-0-30-47                     {text-decoration: blink; color: black; background-color: #aaaaaa;}
-.a5-0-31-47                     {text-decoration: blink; color: #aa0000; background-color: #aaaaaa;}
-.a5-0-32-47                     {text-decoration: blink; color: #00aa00; background-color: #aaaaaa;}
-.a5-0-33-47                     {text-decoration: blink; color: #aaaa00; background-color: #aaaaaa;}
-.a5-0-34-47                     {text-decoration: blink; color: #0000aa; background-color: #aaaaaa;}
-.a5-0-35-47                     {text-decoration: blink; color: #aa00aa; background-color: #aaaaaa;}
-.a5-0-36-47                     {text-decoration: blink; color: #00aaaa; background-color: #aaaaaa;}
-.a5-0-37-47                     {text-decoration: blink; color: #aaaaaa; background-color: #aaaaaa;}
-.a5-1-30-47                     {text-decoration: blink; color: #444444; background-color: #aaaaaa;}
-.a5-1-31-47                     {text-decoration: blink; color: #ff4444; background-color: #aaaaaa;}
-.a5-1-32-47                     {text-decoration: blink; color: #44ff44; background-color: #aaaaaa;}
-.a5-1-33-47                     {text-decoration: blink; color: #ffff44; background-color: #aaaaaa;}
-.a5-1-34-47                     {text-decoration: blink; color: #4444ff; background-color: #aaaaaa;}
-.a5-1-35-47                     {text-decoration: blink; color: #ff44ff; background-color: #aaaaaa;}
-.a5-1-36-47                     {text-decoration: blink; color: #44ffff; background-color: #aaaaaa;}
-.a5-1-37-47                     {text-decoration: blink; color: white; background-color: #aaaaaa;}
-.
-
-   foreach (split("\n", $STYLE)) {
-	s/\x0a?\x0d/\n/g;
-	/^([^\s]*)\s*(.*)$/;
-	$styles{$1}=$2;
-#        $styles{$key}=~s/^\{//;
-   }
-}
-
-sub ansi2html {
-    init();
-    return "<PRE><FONT face=\"fixedsys, lucida console, terminal, vga, monospace\"><FONT color=\"#aaaaaa\">".
-    "<span style=\"{letter-spacing: 0; font-size: 12pt;}\">".&parseansi(shift)."</span></font></PRE>";
-}
-
-
-sub parseansi  {
-	$text=$_[0];
-	$strpos=0;
-	$new_text='';
-	$text=~s/\x0d?\x0a/\x0d/g;
-#        $text=~s/\x0a/\x0d/g;
-#        $text=~s/\n\x1b\[A\x1b\[[0-9]*C//gs;
-	$text=~s/^.*\x1b\[1;1H//gs;
-	$text=~s/^.*\x1b\[2J//gs;
-	$text=~s/\x1b\[D/\x08/g;
-	$text=~s/\x1b\[([0-9]*)D/substr($backspaces,0,$1)/ge;
-	# Wrap text at 80 chars... there's gotta be an easier way of doing this
-	$line_pos=0;
-	while ($strpos<length($text))  {
-		$char=substr($text,$strpos,1);
-		if ($char=~/\x1b/)  {
-			$ansi_code='';
-			until ($char =~ /[a-zA-Z]/ or $strpos > length($text))  {
-				$ansi_code.=$char;
-				$strpos += 1;
-				$char=substr($text,$strpos,1);
-			}
-			$ansi_code.=$char;
-			if ($ansi_code=~/\x1b\[([0-9]*)C/)  {
-				$line_pos+=$1;
-				$this_line.=substr($nbspaces,1,$1);
-				$new_text.=substr($nbspaces,1,$1);
-			}
-			else  {
-				$new_text.=$ansi_code;
-			}
-		}
-		elsif ($char=~/\x08/)  {
-			$line_pos-=1;
-			$new_text.=$char;
-		}
-		elsif ($char=~/\x0d/)  {
-			$strpos+=1;
-			if ($strpos<length($text))  {
-				$ansi_code='';
-				$char=substr($text,$strpos,1);
-				if ($char=~/\x1b/)  {
-					until ($char =~ /[a-zA-Z]/ or $strpos > length($text))  {
-						$ansi_code.=$char;
-						$strpos += 1;
-						$char=substr($text,$strpos,1);
-					}
-					$ansi_code.=$char;
-					if ($ansi_code eq "\x1b[A")  {
-						$ansi_code='';
-						$strpos+=1;
-						$char=substr($text,$strpos,1);
-						if ($char eq "\x1b")  {
-#                                                        $new_text.="Bonk!\n";
-							until ($char =~ /[a-zA-Z]/ or $strpos > length($text))  {
-								$ansi_code.=$char;
-								$strpos += 1;
-								$char=substr($text,$strpos,1);
-							}
-							$ansi_code.=$char;
-							if ($ansi_code=~/\x1b\[([0-9]+)C/)  {
-#                                                                $new_text.="Bork!\n";
-								$new_text.=substr($nbspaces,0,$1-$line_pos);
-								$line_pos = $1;
-							}
-							else  {
-								$new_text.=$ansi_code;
-							}
-						}
-						else  {
-							$this_line=$char;
-							$new_text.="\x0d$char";
-							$line_pos=1;
-						}
-					}
-					elsif ($ansi_code=~/\x1b\[([0-9]*)C/)  {
-						$line_pos=$1;
-						$this_line=substr($nbspaces,1,$line_pos);
-						$new_text.="\x0d$this_line";
-					}
-					else  {
-						$new_text.="\x0d$ansi_code";
-						$line_pos=0;
-						$this_line='';
-					}
-				}
-				else  {
-					$new_text.="\x0d";
-					$line_pos=0;
-					$this_line='';
-					$strpos-=1;
-				}
-			}
-			else  {
-				$new_text.="\x0d";
-				$line_pos=0;
-				$this_line='';
-				$strpos-=1;
-			}
-		}
-		else  {
-			$this_line.=$char;
-			$line_pos+=1;
-			$new_text.=$char;
-		}
-		if ($line_pos>79)  {
-#                        print "$line_pos\n";
-#                        print "$this_line\n";
-			$this_line='';
-			$line_pos=0;
-			$new_text.="\x0d";
-			$strpos+=1;
-			if ($strpos<length($text))  {
-				$char=substr($text,$strpos,1);
-				if ($char ne "\x0d")  {
-					$strpos-=1;
-				}
-			}
-		}
-		$strpos+=1;
-	}
-	$text=$new_text;
-	$new_text='';
-#        $show_progress=$text;
-#        $show_progress=~s/\x0d/\n/g;
-#        print $show_progress;
-	$text=~s/\x1b\[C/ /g;
-	$text=~s/\x1b\[([0-9]*)C/substr($nbspaces,0,$1)/ge;
-	while ($text=~s/[^\x0d\x08]\x08//g)  {}
-	$text=~s/\x08//g;
-	$text=~s/\x0d/\n/g;
-	$text=~s/\</&lt;/g;
-	$text=~s/\>/&gt;/g;
-#        $text=~s/\x1b\[C/$blackspan $endspan/g;
-#        $text=~s/\x1b\[([0-9]*)C/$blackspan.substr($nbspaces,0,$1).$endspan/ge;
-        $text=~s/ /&nbsp;/g;
-	$text=~s/\x1b\[K//g;
-	$text=~s/\x1b\[A//g;
-	$text=~s/([\x7f-\xff])/$ascii{ord($1)}/ge;
-	$text=~s/\x1b\[[^a-zA-Z]*[a-ln-zA-Z]//g;
-	$strpos=0;
-	while ($strpos<length($text))  {
-		$char=substr($text,$strpos,1);
-		if ($char ne "\x1b")  {
-			if ($char eq '(' && substr($text,$strpos+1,1) ne "'" && substr($text,$strpos+1,1) ne '1')  {
-				$styles{".a$blink-$attr-$foreground-$background"}=~/(?<=[\s{])color: ([^;]*); /;
-				$html_color=$1;
-				$html_style=$styles{".a$blink-$attr-$foreground-$background"};
-				$html_style=~s/(?<=[\s{])color: ([^;]*);//g;
-				$new_text.="</font><FONT color=\"$html_color\">" if ($old_html_color ne $html_color);
-				$new_text.="</SPAN><SPAN style=\"$html_style\">" if ($html_style ne $old_style);
-				$old_style=$html_style;
-				$old_html_color=$html_color;
-			}
-			$new_text .= $char;
-			$strpos+=1;
-		}
-		else  {
-			$code_length=1;
-			while (substr($text,$strpos+$code_length,1) ne 'm' && $strpos+$code_length-2<length($text))  {
-#                                print $strpos," - ",$code_length," - ",length($text),"\n";
-				$code_length+=1;
-			}
-			$ansi_code=substr($text,$strpos,$code_length+1);
-			$attributes=$ansi_code;
-			$attributes=~s/[^0-9;]//g;
-			@attributes=split(/;/,$attributes);
-			foreach $attribute (@attributes)  {
-				if ($attribute eq '0')  {
-					$attr='0';
-					$foreground='37';
-					$background='40';
-					$blink='';
-				}
-				elsif ($attribute eq '1')  {
-					$attr='1';
-				}
-				elsif ($attribute eq '5')  {
-					$blink='5';
-				}
-				elsif ($attribute=~m/^3[0-7]$/)  {
-					$foreground=$attribute;
-				}
-				elsif ($attribute=~m/^4[0-7]$/)  {
-					$background=$attribute;
-				}
-			}
-			$styles{".a$blink-$attr-$foreground-$background"}=~/(?<=[\s{])color: ([^;]*);/;
-			$html_color=$1;
-			$html_style=$styles{".a$blink-$attr-$foreground-$background"};
-			$html_style=~s/(?<=[\s{])color: ([^;]*);//g;
-                        $new_text.="</font><FONT color=\"$html_color\">" if (defined $html_color && $old_html_color ne $html_color);
-			$new_text.="</SPAN><SPAN style=\"$html_style\">" if (defined $html_style && $html_style ne $old_style);
-			$old_style=$html_style if defined $html_style;
-			$old_html_color=$html_color if defined $html_color;
-			$strpos += length($ansi_code);
-		}
-	}
-#        $new_text=~s/\n/&nbsp;<BR>/g;
-#        $new_text=~s/\<BR>\<BR>/<BR>&nbsp;<BR>/g;
-	$new_text;
-}
-
-sub dontparseansi  {
-	$text=$_[0];
-	return $text;
-}
-
-1;
 
 package Slash::OurNet::Standalone;
 
@@ -977,58 +478,6 @@ use CGI;
 use base 'Exporter';
 
 our @EXPORT = qw(
-    getCurrentVirtualUser getCurrentForm getCurrentStatic slashDisplay
-    getCurrentDB getUser getCurrentUser createEnvironment header
-    titlebar footer
-);
-
-sub header {
-    print "Content-Type: text/html\n\n";
-    print "<html><head><title>@_</title><body>";
-}
-
-sub footer {
-    print "<hr>@_</body></html>";
-}
-
-sub titlebar {
-    print "<h1>@_</h1>";
-}
-sub getCurrentVirtualUser {
-    return 'autrijus';
-}
-
-sub getCurrentForm {
-    return { CGI->Vars() };
-}
-
-sub getCurrentStatic {
-}
-
-sub getCurrentDB {
-}
-
-sub getUser {
-}
-
-sub getCurrentUser {
-}
-
-sub slashDisplay {
-    print "@_";
-}
-
-sub createEnvironment {
-}
-
-1;
-
-package Slash::OurNet::Standalone;
-
-use CGI;
-use base 'Exporter';
-
-@EXPORT = qw(
     getCurrentVirtualUser getCurrentForm getCurrentStatic slashDisplay
     getCurrentDB getUser getCurrentUser createEnvironment header
     titlebar footer

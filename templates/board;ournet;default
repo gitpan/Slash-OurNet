@@ -6,7 +6,7 @@ Lists all articles in a board
 * board = the Board object
 * group = the Group object board belongs to
 * child = the ArticleGroup type: 'archive', 'article' or 'mailbox'
-* message = any additonal prompts
+* message = any additional prompts
 * display = 'top' means the 'recent articles' list in the top page
 
 __title__
@@ -49,7 +49,7 @@ __template__
     Date
     </nobr></font></td>
     </tr>
-[% IF child == 'articles' %]
+[% IF child == 'articles' AND user.nickname != 'guest' %]
 <form action="ournet.pl" method="post">
     <tr>
     <td BGCOLOR="[% user.bg.1 %]">
@@ -63,11 +63,7 @@ __template__
     </td><td width="10%" BGCOLOR="[% user.bg.1 %]">
     [% user.nickname %]
     </td><td width="10%" BGCOLOR="[% user.bg.1 %]">
-[% IF user.nickname == 'guest' %]
-    <INPUT TYPE="button" NAME="submit" VALUE="Post">
-[% ELSE %]
     <INPUT TYPE="submit" NAME="submit" VALUE="Post">
-[% END %]
     </td></tr>
 </form>
 [% END %]

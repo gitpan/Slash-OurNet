@@ -4,10 +4,10 @@ __description__
 Display a single article
 
 * article = the Article object
-* board = the Board object aritcle belongs to
+* board = the Board object article belongs to
 * group = the Group object board belongs to
 * child = the ArticleGroup type: 'archive', 'article' or 'mailbox'
-* message = any additonal prompts
+* message = any additional prompts
 
 __title__
 

@@ -3,7 +3,7 @@ default
 __description__
 The navigation bar
 
-* mailbox = whether if this is a mailbox display
+* mailbox = whether if the user has access to mailbox
 * newid = the link to acquire a new id
 * login = the login url
 * mailbox = the mailbox url

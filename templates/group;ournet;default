@@ -4,7 +4,7 @@ __description__
 Print out all groups / boards inside a group
 
 * boards = all groups / boards
-* message = any additonal prompts
+* message = any additional prompts
 * display = 'root': hide name and article_count panels
 
 __title__

@@ -24,8 +24,7 @@ our ($TopClass, $TopArticles, $NewId, $MailBox, $Customize, $BugReport,
      $MainMenu, $Organization, @Connection, $RootDisplay, $DefaultUser,
      $DefaultNick, $Login);
 
-(my $pathname = $0) =~ s/[^\/]+$//; $pathname ||= '.';
-do "$pathname/ournet.conf";
+(my $pathname = $0) =~ s/.pl$/.conf/; do $pathname;
 
 our $bbs;
 
@@ -37,11 +36,12 @@ sub main {
 	board		=> \&displayBoard,
 	article		=> \&displayArticle,
 	article_edit	=> \&editArticle,
-	mail		=> \&displayMailBox,
-	top		=> \&displayTop,
 	default		=> \&displayDefault,
 	reply		=> \&editArticle,
     );
+
+    $ops{mail} = \&displayMailBox if $MailBox;
+    $ops{top}  = \&displayTop	  if $TopArticles;
 
     my %safe = map { $_ => 1 } 
 	qw/login newid group board article top default/;
@@ -61,21 +61,21 @@ sub main {
 
     my $uid = $form->{'uid'};
     my $slashdb = getCurrentDB();
-    my $user = $slashdb->getUser($form->{uid}, 'nickname') 
+    my $name = $slashdb->getUser($form->{uid}, 'nickname') 
 	if $form->{uid};
-    $user ||= getCurrentUser('nickname');
-    $user ||= $DefaultUser;
+    $name ||= getCurrentUser('nickname');
+    $name ||= $DefaultUser;
 
     my $nick = $slashdb->getUser($form->{uid}, 'fakeemail') 
 	if $form->{uid};
     $nick ||= getCurrentUser('fakeemail');
     $nick ||= $DefaultNick;
 
-    header("$Organization - $user");
-    titlebar("100%","$Organization - $user");
+    header("$Organization - $name");
+    titlebar("100%","$Organization - $name");
 
     slashDisplay('navigation', { 
-	user       => $user,
+	user       => $name,
 	newid	   => $NewId,
 	login	   => $Login,
 	mailbox    => $MailBox,
@@ -85,7 +85,7 @@ sub main {
 	slash_user => $ENV{SLASH_USER},
     });
 
-    $ops{$op}->($form, $bbs, $constants, $user, $nick);
+    $ops{$op}->($form, $bbs, $constants, $name, $nick);
 
     footer();
 }
@@ -102,12 +102,15 @@ sub displayLogin {
 
 sub displayDefault {
     displayGroup(@_, '', $TopClass);
-    # print "<hr>";
-    # displayTop(@_);
+
+    if ($TopArticles) {
+	print "<hr>";
+	displayTop(@_);
+    }
 }
 
 sub displayTop {
-    my ($form, $bbs, $constants, $user) = @_;
+    my ($form, $bbs, $constants, $name) = @_;
     my $articles = $bbs->top;
 
     slashDisplay('board', {
@@ -119,7 +122,7 @@ sub displayTop {
 }
 
 sub displayGroup {
-    my ($form, $bbs, $constants, $user, $nick, $group, $board) = @_;
+    my ($form, $bbs, $constants, $name, $nick, $group, $board) = @_;
     $group ||= $form->{group};
     $board ||= $form->{board};
 
@@ -139,7 +142,7 @@ sub displayGroup {
 }
 
 sub displayBoard {
-    my ($form, $bbs, $constants, $user) = @_;
+    my ($form, $bbs, $constants, $name) = @_;
     unless ($bbs->{bbs}{boards}{$form->{board}}) {
 	print 'No such board.<hr>';
 	print '<div align="center">[ <a href="ournet.pl">Back to main menu</a> ]</div>';
@@ -167,14 +170,14 @@ sub displayBoard {
 }
 
 sub displayMailBox {
-    my ($form, $bbs, $constants, $user) = @_;
+    my ($form, $bbs, $constants, $name) = @_;
     my ($message, $pages, $articles) 
-	= $bbs->board('', $user, 'mailbox', $form->{begin});
+	= $bbs->board('', $name, 'mailbox', $form->{begin});
     
     slashDisplay('board', {
 	group	 => '',
 	child	 => 'mailbox',
-	board	 => $user,
+	board	 => $name,
 	articles => $articles, 
 	pages    => $pages, 
 	display	 => 'mailbox',
@@ -185,7 +188,7 @@ sub displayMailBox {
 }
 
 sub editArticle {
-    my ($form, $bbs, $constants, $user, $nick) = @_;
+    my ($form, $bbs, $constants, $name, $nick) = @_;
     my $message = '';
     my $article;
 
@@ -195,7 +198,7 @@ sub editArticle {
 	# insert it, take message, return to board
 	($article, $message) = $bbs->article_save(
 	    @{$form}{qw/group board child name reply title body state/}, 
-	    $user, $nick,
+	    $name, $nick,
 	);
 
 	# back to board if nothing's wrong, otherwise fall through
@@ -206,10 +209,13 @@ sub editArticle {
 	    @{$form}{qw/group board child name reply/})
 	)[0]; # ignore related
 
-	$article->{header}{From} = "$user ($nick)";
+	$article->{header}{From} = "$name ($nick)";
 
-	# XXX GMT error! oh my god they killed kenny!
-	$article->{header}{Date} = (scalar localtime(time+28800));
+	my $offset = sprintf("%+0.4d", getCurrentUser('off_set') / 36);
+	$offset =~ s/([1-9][0-9]|[0-9][1-9])$/$1 * 0.6/e;
+	$article->{header}{Date} = timeCalc(
+	    scalar localtime, "%a %b %e %H:%M:%S $offset %Y"
+	);
     }
 
     $article->{header}{Subject} =~ s/^(?!Re:)/Re: / if $mode eq 'reply';

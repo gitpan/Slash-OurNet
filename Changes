@@ -1,4 +1,71 @@
 ____________________________________________________________________________
+[  2449] By: autrijus@autriegb                     on 2001/11/28 03:36:26
+	Log: * so, this be Slash::OurNet v1.2.
+	     * removes redundant standalone code.
+       Path: .
+	   ! OurNet.pm
+____________________________________________________________________________
+[  2447] By: autrijus@autriegb                     on 2001/11/28 03:28:17
+	Log: * disallow guest posting completely.
+	     * resolve namespace clash: $name of articles is now $artid.
+       Path: templates
+	   ! board;ournet;default
+       Path: .
+	   ! OurNet.pm
+____________________________________________________________________________
+[  2446] By: autrijus@autribsd                     on 2001/11/28 02:33:56
+	Log: * uses AutoInstall to grab FromText/FromANSI per user's
+	     choice.
+	     * utilizes the new FromANSI module.
+       Path: .
+	   ! Makefile.PL OurNet.pm
+____________________________________________________________________________
+[  2444] By: autrijus@autribsd                     on 2001/11/28 01:23:04
+	Log: * $RealEmail in conf parameters enables realemail. (requested
+	     by pudge)
+	     * renamed $user to $name everywhere (also pudge)
+	     * spellchecked the templates.
+       Path: templates
+	   ! article;ournet;default board;ournet;default
+	   ! data;ournet;default group;ournet;default main;ournet;default
+	   ! navigation;ournet;default
+       Path: .
+	   ! OurNet.pm ournet.conf ournet.pl
+____________________________________________________________________________
+[  2443] By: autrijus@autriegb                     on 2001/11/28 00:18:40
+	Log: * correct the misnomer: toparticles = 'Recent Articles'.
+	     * ournet.pl now rads correct configure.
+	     * disables toparticles by default in .conf.
+       Path: .
+	   ! ournet.conf ournet.pl
+____________________________________________________________________________
+[  2442] By: autrijus@autriegb                     on 2001/11/28 00:11:12
+	Log: * now reads <scriptname>.conf instead of ournet.conf.
+	     * (i.e. if you rename ournet.pl to perlbbs.pl it reads
+	     perlbbs.conf)
+	     * fixed ansi stripping code; text2html now on-par with ansi
+	     rendering.
+       Path: .
+	   ! OurNet.pm
+____________________________________________________________________________
+[  2439] By: autrijus@autribsd                     on 2001/11/27 12:23:36
+	Log: * HTML::FromText revived as default. (pudge++)
+	     * Date header have user's time zone now instead of CST
+	     hackery.
+       Path: .
+	   ! Makefile.PL OurNet.pm ournet.pl
+____________________________________________________________________________
+[  2438] By: autrijus@autribsd                     on 2001/11/27 11:44:38
+	Log: * per pudge's request, removed the weird ansi2html stuff on
+	     $STRIP_ANSI.
+       Path: .
+	   ! OurNet.pm
+____________________________________________________________________________
+[  2428] By: autrijus@autricvic                    on 2001/11/26 08:47:17
+	Log: * changes.
+       Path: .
+	   ! Changes
+____________________________________________________________________________
 [  2427] By: autrijus@autribsd                     on 2001/11/26 08:16:42
 	Log: * Slash::OurNet 1.1, pudge edition.
 	     * all traditional chinese things left out for 1.2.
