@@ -16,7 +16,6 @@ zh_TW
 __name__
 group
 __template__
-[% USE Slash %]
 <TABLE BORDER="0" WIDTH="100%">
 <caption><nobr><FONT FACE="[% constants.mainfontface %] COLOR="[% user.fg.0 %]"><strong>
 [% message %]
@@ -24,18 +23,18 @@ __template__
     <tr>
 [% IF display != 'root' %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
-    Name
+    [% loc('Name') %]
     </font></td>
 [% END %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    Subject
+    [% loc('Subject') %]
     <nobr></font></td>
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
-    Moderator
+    [% loc('Moderator') %]
     </font></td>
 [% IF display != 'root' %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    Articles
+    [% loc('Articles') %]
     </nobr></font></td>
     </tr>
 [% END %]
@@ -44,22 +43,22 @@ __template__
     <tr>
     [% IF type == 'group' %]
     <td width=80% BGCOLOR="[% user.bg.1 %]"><nobr>
-	<a class="link" href="ournet.pl?op=[% type %]&group=[% group %]&board=[% board %]">[% title %]</a>
+	<a class="link" href="[% script %]/[% group %]/[% board %]/">[% title %]</a>
     [% ELSE %]
     <td width=80%><nobr>
-	<a class="link" href="ournet.pl?op=[% type %]&group=[% group %]&board=[% board %]">[% title %]</a>
+	<a class="link" href="[% script %]/[% group %]/[% board %]/articles/">[% title %]</a>
     [% END %]
 [% ELSE %]
     <tr>
     [% IF type == 'group' %]
     <td width=20% BGCOLOR="[% user.bg.1 %]"><nobr><b>
-	<a href="ournet.pl?op=[% type %]&group=[% group %]&board=[% board %]">[% board %]</a></b>
+	<a href="[% script %]/[% group %]/[% board %]/">[% board %]</a></b>
     </nobr></td><td width="60%" BGCOLOR="[% user.bg.1 %]"><nobr>
     [% ELSE %]
     <td width=20% BGCOLOR="[% user.bg.0 %]"><nobr>
-	<a class="link" href="ournet.pl?op=[% type %]&group=[% group %]&board=[% board %]">[% board %]</a>
+	<a class="link" href="[% script %]/[% group %]/[% board %]/articles/">[% board %]</a>
 	[% IF archives_count %]
-	<a title="[% etc_brief %]" href="ournet.pl?op=[% type %]&group=[% group %]&board=[% board %]&child=archives"><img width=16 height=16 src="archive.gif" border=0></a>
+	<a title="[% etc_brief %]" href="[% script %]/[% group %]/[% board %]/archives/"><img width=16 height=16 src="[% imagedir %]/archive.gif" border=0></a>
 	[% END %]
     </nobr></td><td width="60%">
     [% END %]
@@ -86,9 +85,9 @@ __template__
 <div align="center">
 <hr>|
     [% IF group == topclass %]
-<a href="ournet.pl">Back to home</a>
+<a href="[% script %]">[% loc('Back to home') %]</a>
     [% ELSE %]
-<a href="ournet.pl?op=group&group=[% topclass %]&board=[% group %]">Back to group</a>
+<a href="[% script %]/[% topclass %]/[% group %]/">[% loc('Back to group') %]</a>
     [% END %]
 |</div>
 [% END %]

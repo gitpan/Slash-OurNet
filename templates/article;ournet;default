@@ -18,17 +18,49 @@ en_US
 __name__
 article
 __template__
-[% USE Slash %]
-[% message %]
-<TABLE BORDER="0" WIDTH="100%"><caption>
-<FORM action="ournet.pl" method="post">
+<a name='top'>[% message %]</a>
+<FORM action="[% script %]" method="post">
     <INPUT type="hidden" name="child" value="[% child %]">
     <INPUT type="hidden" name="board" value="[% board %]">
     <INPUT type="hidden" name="group" value="[% group %]">
-<nobr><FONT FACE="[% constants.mainfontface %] COLOR="[% user.fg.0 %]"><strong>
-<a name='top'>
+<TABLE BORDER="0" WIDTH="100%">
+    <tr>
+    <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+    [% loc('From') %]
+    </nobr></font></td>
+    <td size="30%" BGCOLOR="[% user.bg.1 %]"><nobr>
+    [% article.header.From %]
+    </nobr></td>
+    <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+    [% loc('Board') %]
+    </nobr></font></td>
+    <td size="30%" 
+[% IF child == 'articles' %] colspan="[% user.is_anon ? 2 : 1 %]" [% END %]
+    align="center" BGCOLOR="[% user.bg.1 %]"><nobr>
+    <a href="[% script %]/[% group %]/[% board %]/[% child %]/">[% board %]</a>
+    </nobr></td>
+[% IF !user.is_anon %]
 [% IF display == 'edit' %]
-Subject:
+    <td align=center rowspan=3 size="5%" BGCOLOR="[% user.bg.3 %]">
+	<INPUT TYPE="submit" NAME="submit" VALUE="[% loc('Post') %]">
+    </td>
+[% ELSIF child == 'articles' %]
+    <td align=center rowspan=3 size="5%" BGCOLOR="[% user.bg.3 %]">
+    <INPUT TYPE="submit" NAME="submit" VALUE="[% loc('Reply') %]">
+    </td>
+[% END %]
+[% END %]
+    </tr>
+    <tr>
+    <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
+    [% loc('Subject') %]
+    </nobr></font>
+    </td>
+    <td size="30%"
+[% IF child == 'articles' AND !user.is_anon %] colspan=3 [% ELSE %] colspan=4 [% END %]
+    BGCOLOR="[% user.bg.1 %]"><nobr>
+
+[% IF display == 'edit' %]
 <INPUT type="text" name="title" value="[% article.header.Subject %]" size=30 maxlength=60>
 <INPUT type="hidden" name="reply" value="[% reply %]">
 <INPUT type="hidden" name="state" value="1">
@@ -36,52 +68,22 @@ Subject:
 [% article.header.Subject %]
 <INPUT type="hidden" name="reply" value="[% article.name %]">
 [% END %]
-</a></strong></font></nobr>
-</caption>
 
-    <tr>
-    <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    From
-    </nobr></font></td>
-    <td size="30%" align="center" BGCOLOR="[% user.bg.1 %]"><nobr>
-    [% article.header.From %]
     </nobr></td>
-    <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    Board
-    </nobr></font></td>
-    <td size="30%" 
-[% IF child != 'articles' %] colspan=2 [% END %]
-    align="center" BGCOLOR="[% user.bg.1 %]"><nobr>
-    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=[% child %]">[% board %]</a>
-    </nobr></td>
-[% IF display == 'edit' %]
-    <td align=center rowspan=2 size="5%" BGCOLOR="[% user.bg.3 %]">
-	<INPUT TYPE="submit" NAME="submit" VALUE="Post">
-    </td>
-[% ELSIF child == 'articles' %]
-    <td align=center rowspan=2 size="5%" BGCOLOR="[% user.bg.3 %]">
-    [% IF user.nickname == 'guest'  %]
-	<INPUT TYPE="button" NAME="submit" VALUE="Reply">
-    [% ELSE %]
-	<INPUT TYPE="submit" NAME="submit" VALUE="Reply">
-    [% END %]
-    </td>
-[% END %]
     </tr>
     <tr>
     <td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    Date
+    [% loc('Date') %]
     </nobr></font>
     </td>
     <td size="30%"
-[% IF child == 'articles' %] colspan=3 [% ELSE %] colspan=4 [% END %]
-    align="center" BGCOLOR="[% user.bg.1 %]"><nobr>
+[% IF child == 'articles' AND !user.is_anon %] colspan=3 [% ELSE %] colspan=4 [% END %]
+    BGCOLOR="[% user.bg.1 %]"><nobr>
     [% article.header.Date %]
     <INPUT type="hidden" name="op" value="article_edit">
     </nobr></td>
     </tr>
-<tr><td colspan=5 bgcolor="black"><font face="fixedsys">
-
+<tr><td colspan=5 bgcolor="[% ansi2html ? 'black' : user.bg.2 %]">
 [% IF display == 'edit' %]
 <TEXTAREA name="body" cols=80 rows=20 style="font-familly: Fixedsys, Lucida Console, ming">
 [% article.body %]
@@ -90,14 +92,14 @@ Subject:
 [% article.body %]
 [% END %]
     </form>
-</font></td></tr>
+</td></tr>
 [% FOREACH related %]
 <tr><td size="5%" align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
 [% relation %]
 </nobr></font></td>
-<td colspan=2 BGCOLOR="[% user.bg.1 %]"><nobr><a class="link" href="ournet.pl?op=article&group=[% group %]&child=[% child %]&board=[% board %]&name=[% name %]">[% header.Subject %]</a></nobr></td>
+<td colspan=2 BGCOLOR="[% user.bg.1 %]"><nobr><a class="link" href="[% script %]/[% group %]/[% board %]/[% child %]/[% name %]">[% header.Subject %]</a></nobr></td>
 <td align="center" BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-Author
+[% loc('Author') %]
 </nobr></font></td>
 <td align="center" BGCOLOR="[% user.bg.1 %]"><nobr>[% author %]</nobr></td>
 </tr>[% END %]
@@ -107,16 +109,16 @@ Author
     |
 [% IF child == "articles" %]
     [% IF archives_count > 0 %]
-    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=archives"> Archives</a>
+    <a href="[% script %]/[% group %]/[% board %]/archives/"> [% loc('Archives') %]</a>
     |
     [% END %]
 [% ELSE %]
-    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=articles">Back to board</a>
+    <a href="[% script %]/[% group %]/[% board %]/articles/">[% loc('Back to board') %]</a>
     |
 [% END %]
-    <a href="ournet.pl?op=board&group=[% article.group %]&board=[% article.board %]&child=[% child %]">Back to article list</a>
+    <a href="[% script %]/[% article.group %]/[% article.board %]/[% child %]/">[% loc('Back to article list') %]</a>
     |
-    <a href='#top'>Top</a>
+    <a href='#top'>[% loc('Top') %]</a>
     |
     </nobr>
 </div>

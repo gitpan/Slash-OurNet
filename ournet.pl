@@ -1,11 +1,30 @@
-# $File: //member/autrijus/slash-ournet/ournet.pl $ $Author: autrijus $
-# $Revision: #13 $ $Change: 1360 $ $DateTime: 2001/07/01 06:41:24 $
+#!/usr/local/bin/perl
+# $File: //depot/metalist/src/plugins/OurNet/ournet.pl $ $Author: clkao $
+# $Revision: #4 $ $Change: 581 $ $DateTime: 2002/08/05 09:49:58 $
 
 use strict;
 use warnings;
-use Slash::OurNet;
+use File::Basename;
+
+our (%ALLBBS);
+
+BEGIN {
+    push @INC, './lib' ;
+    no strict 'refs';
+    *{'Slash::OurNet::ALLBBS'} = \%ALLBBS;
+};
 
 no warnings 'redefine';
+
+our ($Language, $FullScreen, $AllBoards, %StandaloneVars,
+     $TopClass, $TopArticles, $NewId, $MailBox, $Customize, $BugReport,
+     $MainMenu, $Organization, @Connection, $RootDisplay, $DefaultUser,
+     $DefaultNick, $Login, $Auth_Local, $Strip_ANSI);
+
+(my $pathname = $0) =~ s/.\w+$/.conf/; do $pathname;
+
+our $bbs;
+our %Vars;
 
 local $| = 1;
 
@@ -14,49 +33,104 @@ if ($ENV{SLASH_USER}) { eval << '.';
     use Slash::DB;
     use Slash::Display;
     use Slash::Utility;
+    use Slash::OurNet;
 .
+    $Vars{slash} = 1;
 } else { eval << '.';
+    use Slash::OurNet;
     Slash::OurNet::Standalone->import();
 .
+    $Vars{slash} = 0;
+    %Vars = (%Vars, %StandaloneVars);
 }
 
-our ($TopClass, $TopArticles, $NewId, $MailBox, $Customize, $BugReport,
-     $MainMenu, $Organization, @Connection, $RootDisplay, $DefaultUser,
-     $DefaultNick, $Login);
+die $@ if $@;
 
-(my $pathname = $0) =~ s/.pl$/.conf/; do $pathname;
+# http://localhost/ournet/				=> op=default
+# http://localhost/ournet/Group/			=> op=group
+# http://localhost/ournet/Group/Board/			=> op=board
+# http://localhost/ournet/Group/Board/articles/NumOrStr	=> op=article
+# http://localhost/ournet/Group/Board/archives/NumOrStr?edit  => op=board
+# http://localhost/ournet/Group/Board/archives/NumOrStr?reply => op=board
 
-our $bbs;
+sub loc {
+    goto \&Slash::OurNet::loc;
+}
 
 sub main {
     my %ops = (
 	login 		=> \&displayLogin,
-	newid		=> \&displayNewId,
+	userlogin 	=> \&displayLogin,
+	userclose 	=> \&displayLogout,
+	search	 	=> \&displaySearch,
 	group		=> \&displayGroup,
 	board		=> \&displayBoard,
 	article		=> \&displayArticle,
 	article_edit	=> \&editArticle,
 	default		=> \&displayDefault,
 	reply		=> \&editArticle,
+#	newid		=> \&displayNewId,
     );
+
+    $Vars{script} = exists $ENV{SCRIPT_NAME} ? $ENV{SCRIPT_NAME} : $0;
 
     $ops{mail} = \&displayMailBox if $MailBox;
     $ops{top}  = \&displayTop	  if $TopArticles;
 
     my %safe = map { $_ => 1 } 
-	qw/login newid group board article top default/;
-
-    $bbs ||= $cached::bbs ||=
-	Slash::OurNet->new(getCurrentVirtualUser(), @Connection);
+	qw/login userlogin newid group board article top default/;
 
     my $form = getCurrentForm();
     my $constants = getCurrentStatic();
 
-    my $op = $form->{'op'};
-    $op = 'default' unless defined $op and $ops{$op};
+    my $rootdir = exists $ENV{SCRIPT_NAME} ? $ENV{SCRIPT_NAME} : $0;
+#    $rootdir =~ s/[\\\/][^\\\/]+$//;
+    $Vars{rootdir}  = $rootdir;
+    $Vars{imagedir} = $rootdir."/images";
 
-    if (getCurrentUser('is_anon')) {
-	$op = 'default' unless $safe{$op};
+    my $op = $form->{'op'};
+
+    my $pathinfo = $ENV{PATH_INFO};
+    $pathinfo =~ s|/\Q$0\E/?|| if $pathinfo;
+    
+    if (defined $op or !$ENV{PATH_INFO}) {
+	$op = 'default' unless $ops{$op || ''};
+    }
+    else {
+	# let's translate the pathinfo into *real* requests
+	# warn "PATH: $ENV{PATH_INFO}\n$ENV{QUERY_STRING}\n$form->{begin}\n";
+	my @path = split('/', $ENV{PATH_INFO}, -1);
+	my ($group, $board, $child, $article, $chunk, $legit);
+
+	shift @path unless length($path[0]);
+	$article = pop(@path);
+	$child	 = '';
+
+	while ($chunk = pop(@path)) {
+	    $child = "$chunk/$child";
+	    ($legit++, last) if $chunk =~ /^(?:mailbox|archives|articles)$/;
+	}
+
+	if ($legit) {
+	    chop $child; # removes trailing /
+	    $board = pop(@path);
+	}
+	else {
+	    push @path, split('/', $child);
+	    undef $child;
+	}
+
+	$group = join('/', @path);
+
+	$op = $article ? exists $form->{edit}  ? 'edit'
+		       : exists $form->{reply} ? 'reply'
+		       : 'article'
+	    : $child   ? 'board' 
+	    : $group   ? 'group'
+	    : 'default';
+
+	@{$form}{qw/group board child name/}
+	    = ($group, $board, $child, $article);
     }
 
     my $uid = $form->{'uid'};
@@ -66,15 +140,36 @@ sub main {
     $name ||= getCurrentUser('nickname');
     $name ||= $DefaultUser;
 
+    # defaults to plaintext on localhost.
+    $bbs = $ALLBBS{$name} ||= Slash::OurNet->new(
+	getCurrentVirtualUser(), (@Connection, $Auth_Local ? ($name, 1, 1) : ())
+    );
+
     my $nick = $slashdb->getUser($form->{uid}, 'fakeemail') 
 	if $form->{uid};
     $nick ||= getCurrentUser('fakeemail');
     $nick ||= $DefaultNick;
 
-    header("$Organization - $name");
+    $Vars{username} = $name;
+    $Vars{usernick} = $nick;
+
+    if ($name eq $DefaultUser) {
+	$op = 'default' unless $safe{$op};
+    }
+
+    if ($FullScreen) {
+	slashDisplay('header', { 
+	    %Vars,
+	    organization => $Organization,
+	});
+    }
+    else {
+	header("$Organization - $name");
+    }
     titlebar("100%","$Organization - $name");
 
     slashDisplay('navigation', { 
+	%Vars,
 	user       => $name,
 	newid	   => $NewId,
 	login	   => $Login,
@@ -87,21 +182,42 @@ sub main {
 
     $ops{$op}->($form, $bbs, $constants, $name, $nick);
 
-    footer();
+    if ($FullScreen) {
+	slashDisplay('footer', { 
+	    %Vars,
+	});
+    }
+    else {
+	footer();
+    }
 }
 
 sub displayLogin {
     if ($ENV{SLASH_USER}) {
 	# shouldn't be here unless Anonymous Coward is turned off.
-	print "You haven't logged in. Please press login in the left side bar.";
+	print loc("You haven't logged in. Please press login in the left side bar.");
     }
     else {
-	slashDisplay('login', {});
+	print "<HTML><HEAD><META HTTP-EQUIV='Refresh' CONTENT='0;url=".($ENV{HTTP_REFERER} || $Vars{rootdir})."'></HEAD><BODY></BODY></HTML>\n\n";
     }
 }
 
+sub displaySearch {
+    slashDisplay('search', { %Vars });
+}
+
+sub displayLogout {
+    # somehow log out here
+    print "<HTML><HEAD><META HTTP-EQUIV='Refresh' CONTENT='0;url=$Vars{rootdir}/'></HEAD><BODY></BODY></HTML>\n\n";
+}
+
 sub displayDefault {
-    displayGroup(@_, '', $TopClass);
+    if ($AllBoards) {
+	displayAllBoards(@_, '', $TopClass);
+    }
+    else {
+	displayGroup(@_, '', $TopClass);
+    }
 
     if ($TopArticles) {
 	print "<hr>";
@@ -114,9 +230,25 @@ sub displayTop {
     my $articles = $bbs->top;
 
     slashDisplay('board', {
+	%Vars,
 	articles => $articles, 
 	display  => 'top',
 	message  => $TopArticles,
+	topclass => $TopClass,
+    });
+}
+
+sub displayAllBoards {
+    my ($form, $bbs, $constants, $name, $nick, $group, $board) = @_;
+    my $brds = $bbs->{bbs}{boards};
+
+    slashDisplay('group', { 
+	%Vars,
+	board	=> $board,
+	group	=> $group,
+	boards	=> $bbs->mapBoards($TopClass, grep {$_} map {eval{$brds->{$_}}} $brds->KEYS),
+	display	=> $RootDisplay,
+	message	=> $MainMenu,
 	topclass => $TopClass,
     });
 }
@@ -127,8 +259,10 @@ sub displayGroup {
     $board ||= $form->{board};
 
     my ($boards, $message) = $bbs->group($group, $board);
+    goto &displayAllBoards unless @{$boards};
 
     slashDisplay('group', { 
+	%Vars,
 	board	=> $board,
 	group	=> $group,
 	boards	=> $boards, 
@@ -144,8 +278,10 @@ sub displayGroup {
 sub displayBoard {
     my ($form, $bbs, $constants, $name) = @_;
     unless ($bbs->{bbs}{boards}{$form->{board}}) {
-	print 'No such board.<hr>';
-	print '<div align="center">[ <a href="ournet.pl">Back to main menu</a> ]</div>';
+	print loc('No such board.<hr>'), $form->{board};
+	printf(loc(
+	    '<div align="center">[ <a href="%s">Back to main menu</a> ]</div>'
+	), $0);
 	return;
     }
 
@@ -156,6 +292,7 @@ sub displayBoard {
 	= $bbs->board(@{$form}{qw/group board child begin/});
 
     slashDisplay('board', { 
+	%Vars,
 	group	 => $form->{group},
 	child	 => $form->{child},
 	board	 => $form->{board},
@@ -175,6 +312,7 @@ sub displayMailBox {
 	= $bbs->board('', $name, 'mailbox', $form->{begin});
     
     slashDisplay('board', {
+	%Vars,
 	group	 => '',
 	child	 => 'mailbox',
 	board	 => $name,
@@ -221,6 +359,7 @@ sub editArticle {
     $article->{header}{Subject} =~ s/^(?!Re:)/Re: / if $mode eq 'reply';
 
     slashDisplay('article', {
+	%Vars,
 	group	=> $form->{group},
 	child	=> $form->{child},
 	board   => $form->{board},
@@ -228,6 +367,7 @@ sub editArticle {
 	article => $article, # undef if $mode eq 'new'
 	message	=> $message,
 	display	=> 'edit',
+	ansi2html => !$Strip_ANSI,
     });
 }
 
@@ -238,6 +378,7 @@ sub displayArticle {
 	= $bbs->article(@{$form}{qw/group board child name/});
 
     slashDisplay('article', {
+	%Vars,
 	group	=> $form->{group},
 	child	=> $form->{child},
 	board   => $form->{board},
@@ -245,11 +386,101 @@ sub displayArticle {
 	article => $article, 
 	display	=> 'display',
 	related	=> $related,
+	ansi2html => !$Strip_ANSI,
     });
 }
 
+sub httpd {
+    require HTTP::Daemon;
+    require HTTP::Status;
+	local $SIG{CHLD} = 'IGNORE';
+
+    my $d = HTTP::Daemon->new(
+	LocalPort => 7977
+    ) or die "cannot create web server";
+    
+    use constant IsWin32 => ($^O eq 'MSWin32');
+    # use open (IsWin32 ? (IN => ':raw', OUT => ':raw') : ());
+    my $url = (IsWin32 ? 'http://localhost:7977/' : $d->url);
+
+    print "Please contact me at: <$url>\n";
+    print "Press Ctrl-C to shut down this server.";
+
+    if (grep { /^-\w*l\w*$/ } @ARGV) {
+	# evil local override code
+	@Connection     = ('MELIX', $ENV{EBX_BBSROOT} || (
+	    IsWin32 ? find_bbs(
+		'c:/cygwin/home/melix', 'c:/program files/melix/home/melix'
+	    ) : find_bbs('/home/melix', '/home/bbs')
+	));
+
+	system('start',  $url) if ($^O eq 'MSWin32');
+    }
+	
+    while (my $c = $d->accept) {
+	next if ($^O ne 'MSWin32') and fork();
+	while (my $r = $c->get_request) {
+	    no warnings 'uninitialized';
+	    delete $INC{'CGI.pm'};
+	    require CGI;
+
+	    $ENV{REQUEST_METHOD} = 'GET';
+	    $ENV{COOKIE} = $r->headers->header('COOKIE');
+	    $ENV{HTTP_COOKIE} = $r->headers->header('HTTP_COOKIE');
+	    $ENV{CONTENT_LENGTH} = $r->headers->header('CONTENT_LENGTH');
+	    $ENV{PATH_INFO} = $r->url->path || '';
+	    $ENV{PATH_TRANSLATED} = $0;
+	    $ENV{QUERY_STRING} = $r->url->query || $r->content || '';
+	    $ENV{SCRIPT_NAME} = substr($url, 0, -1); # $r->url->path;
+
+	    if ($r->method eq 'GET' or $r->method eq 'POST') {
+			if ($ENV{PATH_INFO} =~ m|^/images/|) {
+			    $c->send_file_response(dirname($0).$ENV{PATH_INFO});
+			}
+			else {
+			    $c->send_basic_header;
+			    select $c; main();
+			    select STDOUT;
+				CGI->delete_all;
+				CGI->new->delete_all;
+			}
+			$c->force_last_request;
+	    } else {
+			$c->send_error(HTTP::Status::RC_FORBIDDEN())
+	    }
+	}
+	$c->close;
+	undef($c);
+	exit unless ($^O eq 'MSWin32');
+    }
+}
+
+# locate a melix installation by looking at various places
+sub find_bbs {
+    local $@;
+    
+    if ($^O eq 'MSWin32' and eval 'use Win32::TieRegistry; 1') {
+		no warnings 'once';
+        my $Registry = $Win32::TieRegistry::Registry;
+		my $binary_path = (
+			$Registry->{'HKEY_LOCAL_MACHINE\Software\Elixir\melix\\'}->{''} ||
+            $Registry->{'HKEY_LOCAL_MACHINE\Software\Cygnus Solutions\\'.
+                        'Cygwin\mounts v2\/\native'}
+        );
+        
+        unshift(@_, "$binary_path/home/melix") if defined $binary_path;
+    }
+
+    foreach my $path (@_, '.') {
+	return $path if -d $path
+	    and (-e "$path/.BRD" or -e "$path/.USR" or
+		 -e "$path/bin/bbsd" or -e "$path/bin/bbsd.exe");
+    }
+
+    die "cannot find Melix BBS's .BRD file in path: (@_).\n"
+}
+
 createEnvironment();
-main();
+(grep { /^-\w*d\w*$/ } @ARGV) ? httpd() : main();
 
 1;
-

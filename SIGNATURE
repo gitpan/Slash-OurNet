@@ -1,0 +1,44 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.05.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It would check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 9eec8b7ea502723a2721d6e7fba37e93199f4bae Changes
+SHA1 fe5a35f6511733fd82aeeb4204d263d8875ea952 MANIFEST
+SHA1 110cdd87dfae95b48b619c25f105e9bf88183ef3 Makefile.PL
+SHA1 7a3c7fe4599570bf55bcc556303997ad1eb08a0f OurNet.pm
+SHA1 4403a9d2b75f1b7613c1d9014f8c40102a6723c6 PLUGIN
+SHA1 6ccfb2a7b33984fa488015bedcd0c7b70a12e44e README
+SHA1 45a8367c7d12aaf65c9fc9f9fde86008186ea5b8 images/archive.gif
+SHA1 20f4b092e3421d580d6ffd8c44f315a2e29bcab6 images/ournet.gif
+SHA1 668fa4a789258e6bd5e172cfcbcf3fa1ddfdf152 ournet.conf
+SHA1 2ffd9672f901e89dff453837588535dbaedd4e04 ournet.pl
+SHA1 dc4570004234291023939c9d115a1a2df1c9f89a po/en.po
+SHA1 ea313562206c2110a9d311c26f6e451c36013d20 po/zh_tw.po
+SHA1 7d70c10c2f3e0d24d226ab997262ec0e56b25b01 t/use.t
+SHA1 1bea8f12b12dfa2759feeeefbc43a7be6ae1cc63 templates/article;ournet;default
+SHA1 8e42fb9e6cff38c166698e9ebf8ec30a58393193 templates/board;ournet;default
+SHA1 4ed2ea6d5b735214c535a6f8f30f7252933aa2ff templates/data;ournet;default
+SHA1 f7750916fdf7ef8dac3c82f65838ded867e74f70 templates/footer;ournet;default
+SHA1 c35c441a22a2d102cc98922fef7708fd2b33a175 templates/group;ournet;default
+SHA1 3cb715ec4a1b6eaf104e40329ee61769a464885d templates/header;ournet;default
+SHA1 d24a78db553455386cd8c17a9f0aa32e3695ad9b templates/main;ournet;default
+SHA1 0df640841bca54afc29333ca6da039403489241e templates/navigation;ournet;default
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.0.7 (FreeBSD)
+
+iD8DBQE9WiJStLPdNzw1AaARAuHzAJ42gHl5bbDrEIM1y8Inxi1XT2dW7QCeP9V2
+hws6+7UEN/noPzdGDKxhuLM=
+=JC2g
+-----END PGP SIGNATURE-----

@@ -18,12 +18,11 @@ en_US
 __name__
 board
 __template__
-[% USE Slash %]
 <TABLE BORDER="0" WIDTH="100%">
 <caption><nobr><FONT FACE="[% constants.mainfontface %] COLOR="[% user.fg.0 %]"><strong>
 [% IF child == "articles" %]
     [% IF archives_count > 0 %]
-	<a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=archives"><img width=19 height=16 src="archive.gif" border=0></a>
+	<a href="[% script %]/[% group %]/[% board %]/archives/"><img width=19 height=16 src="[% imagedir %]/archive.gif" border=0></a>
     [% END %]
 [% END %]
 [% message %]
@@ -31,45 +30,46 @@ __template__
     <tr>
 [% IF display != 'top' %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    No.
+    [% loc('No.') %]
     </nobr></font></td>
 [% END %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
-    Subject
+    [% loc('Subject') %]
     </font></td>
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
-    From
+    [% loc('From') %]
     </font></td>
 [% IF display == 'top' %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]">
-    Board
+    [% loc('Board') %]
     </font></td>
 [% END %]
     <td BGCOLOR="[% user.bg.3 %]"><FONT FACE="[% constants.mainfontface %]" COLOR="[% user.fg.0 %]"><nobr>
-    Date
+    [% loc('Date') %]
     </nobr></font></td>
     </tr>
-[% IF child == 'articles' AND user.nickname != 'guest' %]
-<form action="ournet.pl" method="post">
+[% IF child == 'articles' AND !user.is_anon %]
+<form action="[% script %]/[% group %]/[% board %]/[% child %]/" method="post">
     <tr>
     <td BGCOLOR="[% user.bg.1 %]">
     [% articles_count + 2 %]
     </td><td BGCOLOR="[% user.bg.1 %]">
     <INPUT type="hidden" name="op" value="article_edit">
+    <INPUT type="hidden" name="author" value="[% user.nickname %] ([% user.fakeemail %])">
+    <INPUT type="hidden" name="child" value="[% child %]">
+    <INPUT type="hidden" name="board" value="[% board %]">
+    <INPUT type="hidden" name="group" value="[% group %]">
     <INPUT size=30 maxlength=60 name="title">
-    <input type="hidden" name="child" value="[% child %]">
-    <input type="hidden" name="board" value="[% board %]">
-    <input type="hidden" name="group" value="[% group %]">
     </td><td width="10%" BGCOLOR="[% user.bg.1 %]">
     [% user.nickname %]
     </td><td width="10%" BGCOLOR="[% user.bg.1 %]">
-    <INPUT TYPE="submit" NAME="submit" VALUE="Post">
+    <INPUT TYPE="submit" VALUE="[% loc('Post') %]">
     </td></tr>
 </form>
 [% END %]
-<form name='pageform' action="ournet.pl" method="get">
+<form name='pageform' action="[% script %]/[% group %]/[% board %]/[% child %]/" method="get">
 [% FOREACH articles %]
-[% IF recno % 2 == articles_count % 2 %]
+[% IF recno % 2 != articles_count % 2 %]
     <tr>
 [% ELSE %]
     <tr bgcolor="[% user.bg.1 %]">
@@ -83,10 +83,10 @@ __template__
 [% IF type == 'deleted' %]
     [% title %]
 [% ELSIF type == 'article' %]
-    <a class="link" href="ournet.pl?op=article&group=[% group %]&child=[% child %]&board=[% board %]&name=[% name %]">[% title %]</a>
+    <a class="link" href="[% script %]/[% group %]/[% board %]/[% child %]/[% name %]">[% title %]</a>
 [% ELSE %]
     [% IF articles_count > 0 %]
-    <a class="link" href="ournet.pl?op=board&group=[% group %]&child=[% child %]/[% name %]&board=[% board %]">[% title %]</a>
+    <a class="link" href="[% script %]/[% group %]/[% board %]/[% child %]/[% name %]">[% title %]</a>
     [% ELSE %]
     [% title %]
     [% END %]
@@ -95,7 +95,7 @@ __template__
     [% author %]
 [% IF display == 'top' %]
     </nobr></td><td width="10%"><nobr>
-    <a class="link" href="ournet.pl?op=board&group=[% topclass %]&child=articles&board=[% board %]">[% board %]</a>
+    <a class="link" href="[% script %]/[% topclass %]/[% board %]/articles/">[% board %]</a>
 [% END %]
     </nobr></td><td><nobr>
     [% date %]
@@ -105,26 +105,22 @@ __template__
 [% IF display != 'top' %]
 <hr>
 <div align='center'>
-<input type="hidden" name="op"    value="board">
-<input type="hidden" name="group" value="[% group %]">
-<input type="hidden" name="board" value="[% board %]">
-<input type="hidden" name="child" value="[% child %]">
     <FONT FACE="[% constants.mainfontface %]"><nobr>
     |
-    <a href="ournet.pl?op=group&group=[% topclass %]&board=[% group %]">Back to group</a>
+    <a href="[% script %]/[% topclass %]/[% group %]/">[% loc('Back to group') %]</a>
     |
 [% IF child == "articles" %]
     [% IF archives_count > 0 %]
-    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=archives"> Back to archives</a>
+    <a href="[% script %]/[% group %]/[% board %]/archives/">[% loc('Back to archives') %]</a>
     |
     [% END %]
 [% ELSE %]
-    <a href="ournet.pl?op=board&group=[% group %]&board=[% board %]&child=articles">Back to board</a>
+    <a href="[% script %]/[% group %]/[% board %]/articles/">[% loc('Back to board') %]</a>
     |
 [% END %]
 </nobr>
 [% IF pages %]
-    Page 
+    [% loc('Page') %] 
 <select name="begin" onchange="pageform.submit();">
     [% FOREACH pages %]
 	[% IF iscurpage %]
@@ -134,7 +130,7 @@ __template__
 	[% END %]
     [% END %]
 </SELECT>
-<input type='submit' name="page" value=" Go ">
+<input type='submit' value=" [% loc('Go') %] ">
     |
 [% END %]
     </NOBR>

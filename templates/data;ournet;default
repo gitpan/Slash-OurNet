@@ -20,9 +20,6 @@ __template__
 [% CASE 'head' %]
 	OurNet::BBS
 
-[% CASE 'mysite' %]
-	[% user.nickname %]'s BBS Connectivity
-
 [% END %]
 
 __seclev__
