@@ -1,32 +1,39 @@
-# $File: //depot/metalist/src/plugins/OurNet/README $ $Author: werther $
-# $Revision: #3 $ $Change: 876 $ $DateTime: 2002/09/11 15:11:54 $
+NAME
+    Slash::OurNet - Web Interface for OurNet::BBS
 
-This is the README file for Slash::OurNet, a Slash 2.0+ plug-in
-that allows OurNet connectivity to various BBS and NNTP systems,
-by Elixir Group and OurInternet Inc.
+SYNOPSIS
+    (Currently, this project exists mainly for historical/archival purposes,
+    not for active development.)
 
-* Installation
+DESCRIPTION
+    This module provides a web interface to telnet-based BBS systems as well
+    as NNTP servers, either as a Slash plugin or as a stand-alone CGI daemon
+    in ournet.pl included with this distribution.
 
-You could either copy the whole distribution under the plugins/
-directory before installing Slash, or use the standard perl module
-install process:
+    To install this module, either copy the whole distribution under the
+    plugins/ directory before installing Slash, or use the standard perl
+    module install process:
 
-perl Makefile.PL
-make
-make install
+        perl Makefile.PL
+        make
+        make install
 
-and then use the bin/install-plugin utility (usually located in
-/usr/local/slash/bin/) to install it as a feature of your site.
+    and then use the bin/install-plugin utility (usually located in
+    /usr/local/slash/bin/) to install it as a feature of your site.
 
-please remember to change the ournet.conf settings to suit the
-specific configurations of your bbscomd daemon. See related 
-documentations in the OurNet::BBS distribution for an overview.
+    Please remember to change the "ournet.conf" settings to suit the
+    specific configurations of your "bbscomd" daemon. See related
+    documentations in OurNet::BBS for an overview.
 
-* Copyright
+AUTHORS
+    Chia-Liang Kao <clkao@clkao.org>, Audrey Tang <cpan@audreyt.org>.
 
-Copyright 2001 by Autrijus Tang <autrijus@autrijus.org>,
+COPYRIGHT
+    Copyright 2001-2010 by Chia-Liang Kao <clkao@clkao.org>, Audrey Tang
+    <cpan@audreyt.org>.
 
-All rights reserved.  You can redistribute and/or modify
-this bundle under the same terms as Perl itself.
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
 
-See <http://www.perl.com/perl/misc/Artistic.html>.
+    See <http://www.perl.com/perl/misc/Artistic.html>
+

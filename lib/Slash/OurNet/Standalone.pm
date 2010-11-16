@@ -1,9 +1,6 @@
-# $File: //depot/metalist/src/plugins/OurNet/lib/Slash/OurNet/Standalone.pm $ $Author: autrijus $
-# $Revision: #11 $ $Change: 3992 $ $DateTime: 2003/01/28 20:44:21 $
-
 package Slash::OurNet::Standalone;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 require CGI;
 use base 'Exporter';

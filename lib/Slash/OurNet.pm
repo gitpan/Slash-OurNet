@@ -1,9 +1,7 @@
-# $File: //depot/metalist/src/plugins/OurNet/lib/Slash/OurNet.pm $ $Author: clkao $
-# $Revision: #25 $ $Change: 5066 $ $DateTime: 2003/03/31 09:24:35 $
-
 package Slash::OurNet;
+use 5.006;
 
-our $VERSION = '1.4';
+our $VERSION = '1.41';
 
 use strict;
 use warnings;
@@ -522,3 +520,53 @@ $body
 }
 
 1;
+
+__END__
+
+=head1 NAME
+
+Slash::OurNet - Web Interface for OurNet::BBS
+
+=head1 SYNOPSIS
+
+(Currently, this project exists mainly for historical/archival
+purposes, not for active development.)
+
+=head1 DESCRIPTION
+
+This module provides a web interface to telnet-based BBS systems
+as well as NNTP servers, either as a Slash plugin or as a stand-alone
+CGI daemon in F<ournet.pl> included with this distribution.
+
+To install this module, either copy the whole distribution under
+the F<plugins/> directory before installing Slash, or use the standard
+perl module install process:
+
+    perl Makefile.PL
+    make
+    make install
+
+and then use the F<bin/install-plugin> utility (usually located in
+F</usr/local/slash/bin/>) to install it as a feature of your site.
+
+Please remember to change the C<ournet.conf> settings to suit the
+specific configurations of your C<bbscomd> daemon. See related 
+documentations in L<OurNet::BBS> for an overview.
+
+=head1 AUTHORS
+
+Chia-Liang Kao E<lt>clkao@clkao.orgE<gt>,
+Audrey Tang E<lt>cpan@audreyt.orgE<gt>.
+
+=head1 COPYRIGHT
+
+Copyright 2001-2010 by
+Chia-Liang Kao E<lt>clkao@clkao.orgE<gt>,
+Audrey Tang E<lt>cpan@audreyt.orgE<gt>.
+
+This program is free software; you can redistribute it and/or 
+modify it under the same terms as Perl itself.
+
+See L<http://www.perl.com/perl/misc/Artistic.html>
+
+=cut

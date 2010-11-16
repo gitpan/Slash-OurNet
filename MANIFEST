@@ -5,13 +5,14 @@ images/cash_sq.gif
 images/elix.png
 images/folder.gif
 images/icon_folder.gif
-inc/ExtUtils/AutoInstall.pm
 inc/Module/Install.pm
-inc/Module/Install/AutoInstall.pm
 inc/Module/Install/Base.pm
-inc/Module/Install/Include.pm
+inc/Module/Install/Can.pm
+inc/Module/Install/Fetch.pm
 inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
+inc/Module/Install/ReadmeFromPod.pm
+inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 lib/Slash/OurNet.pm
 lib/Slash/OurNet/Standalone.pm
@@ -25,7 +26,6 @@ po/en.po
 po/zh_cn.po
 po/zh_tw.po
 README
-SIGNATURE
 t/use.t
 templates/elixus/article;ournet;default
 templates/elixus/board;ournet;default
@@ -44,3 +44,4 @@ templates/music543/header;ournet;default
 templates/music543/main;ournet;default
 templates/music543/navigation;ournet;default
 trapped.pl
+SIGNATURE                                Public-key signature (added by MakeMaker)

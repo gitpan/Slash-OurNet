@@ -1,3 +1,14 @@
+[Changes for 1.41 - 2011-11-16]
+
+* Modernize the build process again to the latest Module::Install release.
+
+* Add this notice to README:
+
+    (Currently, this project exists mainly for historical/archival purposes,
+    not for active development.)
+
+----
+
 Change 10250 on 2004/03/01 by autrijus@autribsd
 
 	* this be 1.4...

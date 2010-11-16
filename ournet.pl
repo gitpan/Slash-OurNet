@@ -1,6 +1,4 @@
 #!/usr/local/bin/perl
-# $File: //depot/metalist/src/plugins/OurNet/ournet.pl $ $Author: autrijus $
-# $Revision: #15 $ $Change: 3990 $ $DateTime: 2003/01/28 20:09:14 $
 
 use strict;
 use warnings;
